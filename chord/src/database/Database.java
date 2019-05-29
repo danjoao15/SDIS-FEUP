@@ -11,34 +11,31 @@ import utils.Utils;
 
 public class Database {
 
-	// define the driver to use 
+
 	private String driver = "org.apache.derby.jdbc.EmbeddedDriver";
-	// the database name  
-	private String dbName="localDB";
-	// define the Derby connection URL to use 
-	private String connectionURL = "jdbc:derby:" + dbName + ";create=true";
+	private String db="localDB";
+	private String curl = "jdbc:derby:" + db + ";create=true";
+	private String initsql = "initDB.sql";
 
-	private String initScript = "initDB.sql";
-
-	private Connection conn = null;
+	private Connection c = null;
 
 
-	public Database(String string){
-		dbName = "localDB"+string;
-		connectionURL = "jdbc:derby:" + dbName + ";create=true";
+	public Database(String s){
+		db = "localDB"+s;
+		curl = "jdbc:derby:" + db + ";create=true";
 		connect();
-		if (!checkDBExisted()) {
-			loadDB();
+		if (!dbexists()) {
+			dbload();
 		}
 
 	}
-	private boolean checkDBExisted() {
+	private boolean dbexists() {
 		try {
-			DatabaseMetaData metadata = conn.getMetaData();
-			ResultSet tables = metadata.getTables(conn.getCatalog(), null, "FILESSTORED", null);
-			boolean tableExists = tables.next();
-			Utils.LOGGER.finest("DB existed: " + tableExists);
-			return tableExists;
+			DatabaseMetaData meta = c.getMetaData();
+			ResultSet tab = meta.getTables(c.getCatalog(), null, "FILESSTORED", null);
+			boolean tabexists = tab.next();
+			Utils.LOGGER.finest("database exists - " + tabexists);
+			return tabexists;
 		} catch (SQLException e) {
 			e.printStackTrace();
 		}
@@ -48,8 +45,8 @@ public class Database {
 
 	public void connect() {
 		try {
-			conn = DriverManager.getConnection(connectionURL);
-			Utils.LOGGER.finest("Connected to database " + dbName);
+			c = DriverManager.getConnection(curl);
+			Utils.LOGGER.finest("onnected to " + db);
 
 		} catch (SQLException e) {
 			e.printStackTrace();
@@ -57,40 +54,40 @@ public class Database {
 	}
 
 	public Connection getConnection() {
-		return conn;
+		return c;
 	}
 
-	public void closeConnection() {
+	public void endConnection() {
 		if (driver.equals("org.apache.derby.jdbc.EmbeddedDriver")) {
 			boolean gotSQLExc = false;
 			try {
 				DriverManager.getConnection("jdbc:derby:;shutdown=true");
-			} catch (SQLException se)  {	
-				if ( se.getSQLState().equals("XJ015") ) {		
+			} catch (SQLException e)  {	
+				if ( e.getSQLState().equals("XJ015") ) {		
 					gotSQLExc = true;
 				}
 			}
 			if (!gotSQLExc) {
-				Utils.LOGGER.finest("Database did not shut down normally");
+				Utils.LOGGER.finest("problem ending connection");
 			}  else  {
-				Utils.LOGGER.finest("Database shut down normally");	
+				Utils.LOGGER.finest("connection ended");	
 			}  
 		}
 	}
 
-	public void loadDB() {
-		String sqlScript = Utils.readFile(initScript);
-		runScript(sqlScript);
+	public void dbload() {
+		String sqlscript = Utils.readFile(initsql);
+		runscript(sqlscript);
 	}
 
-	private void runScript(String sql) {
+	private void runscript(String script) {
 		try {
-			Statement stmt = conn.createStatement();
-			String[] stmtList = sql.split(";");
-			for (int i = 0; i < stmtList.length; i++) {
-				String currentStmt = stmtList[i].trim();
-				if (!currentStmt.isEmpty()) {
-					stmt.execute(stmtList[i].trim());	
+			Statement s = c.createStatement();
+			String[] list = script.split(";");
+			for (int i = 0; i < list.length; i++) {
+				String item = list[i].trim();
+				if (!item.isEmpty()) {
+					s.execute(list[i].trim());	
 				}
 			}
 		} catch (SQLException e) {

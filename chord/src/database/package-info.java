@@ -1,8 +1,2 @@
-/**
- * 
- */
-/**
- * @author ineeve
- *
- */
+
 package database;

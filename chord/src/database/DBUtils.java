@@ -7,40 +7,25 @@ import java.util.ArrayList;
 
 import org.apache.derby.shared.common.error.DerbySQLIntegrityConstraintViolationException;
 
-import chord.PeerI;
-import communication.Leases;
+import chord.Peer;
+import program.Leases;
 import utils.Utils;
 
 public class DBUtils {
 
-	private static final String insertFileStored = "INSERT INTO FILESSTORED "
-			+ "(file_id, i_am_responsible, peer_requesting, desired_rep_degree) VALUES (?,?,?,?)";
-	private static final String insertPeer = "INSERT INTO PEERS "
-			+ "(peer_id,ip,port) VALUES (?,?,?)";
-	private static final String insertChunkStored = "INSERT INTO CHUNKSSTORED "
-			+ "(chunk_id, file_id, actual_rep_degree, size) VALUES (?,?,?,?)";
-	private static final String insertBackupRequested = "INSERT INTO BACKUPSREQUESTED "
-			+ "(file_id, filename, desired_rep_degree,encrypt_key,numberOfChunks) VALUES (?,?,?,?,?)";
-	private static final String getFileById = "SELECT * FROM FILESSTORED "
-			+ "WHERE file_id = ?";
-	private static final String updatePeer = "UPDATE PEERS " + 
-			"SET ip = ?, port = ? " + 
-			"WHERE peer_id = ?";
-	private static final String updateFileStored = "UPDATE FILESSTORED "
-			+ "SET last_time_stored = CURRENT_TIMESTAMP, i_am_responsible = ?, peer_requesting = ?, desired_rep_degree = ?"
-			+ "WHERE file_id = ?";
-	private static final String setIamStoring = "UPDATE FILESSTORED "
-			+ "SET i_am_storing = ? WHERE file_id = ?";
-	private static final String updateChunkStoredRepDegree = "UPDATE CHUNKSSTORED "
-			+ "SET actual_rep_degree = ? WHERE chunk_id = ? AND file_id = ?";
-	private static final String updateBackupRequested = "UPDATE BACKUPSREQUESTED "
-			+ "SET desired_rep_degree = ? WHERE file_id = ?";
-	private static final String updateResponsible = "UPDATE FILESSTORED "
-			+ "SET i_am_responsible = ? WHERE file_id = ?";
-	private static final String checkStoredChunk = "SELECT * FROM CHUNKSSTORED "
-			+ "WHERE file_id = ? AND chunk_id = ?";
-	private static final String getPeerWhichRequested = "SELECT peer_id,ip,port FROM PEERS "
-			+ "JOIN (SELECT peer_requesting FROM FILESSTORED WHERE file_id = ?) AS F ON PEERS.peer_id = F.peer_requesting";
+	private static final String insertFileStored = "INSERT INTO FILESSTORED " + "(file_id, i_am_responsible, peer_requesting, desired_rep_degree) VALUES (?,?,?,?)";
+	private static final String insertPeer = "INSERT INTO PEERS " + "(peer_id,ip,port) VALUES (?,?,?)";
+	private static final String insertChunkStored = "INSERT INTO CHUNKSSTORED "	+ "(chunk_id, file_id, actual_rep_degree, size) VALUES (?,?,?,?)";
+	private static final String insertBackupRequested = "INSERT INTO BACKUPSREQUESTED "	+ "(file_id, filename, desired_rep_degree,encrypt_key,numberOfChunks) VALUES (?,?,?,?,?)";
+	private static final String getFileById = "SELECT * FROM FILESSTORED " + "WHERE file_id = ?";
+	private static final String updatePeer = "UPDATE PEERS " + "SET ip = ?, port = ? " + "WHERE peer_id = ?";
+	private static final String updateFileStored = "UPDATE FILESSTORED " + "SET last_time_stored = CURRENT_TIMESTAMP, i_am_responsible = ?, peer_requesting = ?, desired_rep_degree = ?" + "WHERE file_id = ?";
+	private static final String setIamStoring = "UPDATE FILESSTORED " + "SET i_am_storing = ? WHERE file_id = ?";
+	private static final String updateChunkStoredRepDegree = "UPDATE CHUNKSSTORED "	+ "SET actual_rep_degree = ? WHERE chunk_id = ? AND file_id = ?";
+	private static final String updateBackupRequested = "UPDATE BACKUPSREQUESTED " + "SET desired_rep_degree = ? WHERE file_id = ?";
+	private static final String updateResponsible = "UPDATE FILESSTORED " + "SET i_am_responsible = ? WHERE file_id = ?";
+	private static final String checkStoredChunk = "SELECT * FROM CHUNKSSTORED " + "WHERE file_id = ? AND chunk_id = ?";
+	private static final String getPeerWhichRequested = "SELECT peer_id,ip,port FROM PEERS " + "JOIN (SELECT peer_requesting FROM FILESSTORED WHERE file_id = ?) AS F ON PEERS.peer_id = F.peer_requesting";
 	private static final String getBackupRequested = "SELECT * FROM BACKUPSREQUESTED WHERE file_id = ?";
 	private static final String getFileStored = "SELECT file_id, desired_rep_degree, i_am_storing FROM FILESSTORED WHERE file_id = ?";
 	private static final String getChunksOfFile = "SELECT chunk_id, file_id, size FROM CHUNKSSTORED WHERE file_id = ?";
@@ -48,50 +33,45 @@ public class DBUtils {
 	private static final String deleteFileStored = "DELETE FROM FILESSTORED WHERE file_id = ?";
 	private static final String deleteFileRequested = "DELETE FROM BACKUPSREQUESTED WHERE file_id = ?";
 	private static final String getFilesToDelete = "SELECT file_id FROM FILESSTORED WHERE { fn TIMESTAMPADD(SQL_TSI_SECOND,?,last_time_stored)} < ?";
-	private static final String updateFile = "UPDATE FILESSTORED "
-			+ "SET last_time_stored = CURRENT_TIMESTAMP "
-			+ "WHERE file_id = ?";
+	private static final String updateFile = "UPDATE FILESSTORED " + "SET last_time_stored = CURRENT_TIMESTAMP " + "WHERE file_id = ?";
 	private static final String getFilesToUpdate = "SELECT * FROM BACKUPSREQUESTED";
-	private static final String getFiles = 
-			"SELECT * FROM FILESSTORED "
-			+ "WHERE i_am_responsible";
+	private static final String getFiles = "SELECT * FROM FILESSTORED "	+ "WHERE i_am_responsible";
 
-
-	public static void insertPeer(Connection conn, PeerI peerInfo) {
+	public static void insertPeer(Connection c, Peer peerInfo) {
 		try {
-			PreparedStatement p = conn.prepareStatement(insertPeer);
+			PreparedStatement p = c.prepareStatement(insertPeer);
 			p.setString(1, peerInfo.getId());
 			p.setString(2, peerInfo.getAddr().getHostAddress());
 			p.setInt(3, peerInfo.getPort());
 			p.executeUpdate();
-			conn.commit();
+			c.commit();
 			Utils.log("Peer " + peerInfo.getId() + " has been stored");
 		} catch (DerbySQLIntegrityConstraintViolationException e) {
 			Utils.LOGGER.info("Not a new INSERT, updating");
-			updatePeer(conn, peerInfo);
+			updatePeer(c, peerInfo);
 		} catch (SQLException e) {
 			System.err.println(e.getMessage());
 		}
 	}
-	private static void updatePeer(Connection conn, PeerI peerInfo) {
+	private static void updatePeer(Connection c, Peer peerInfo) {
 		try {
-			PreparedStatement p = conn.prepareStatement(updatePeer);
+			PreparedStatement p = c.prepareStatement(updatePeer);
 			p.setString(1, peerInfo.getAddr().getHostAddress());
 			p.setInt(2, peerInfo.getPort());
 			p.setString(3, peerInfo.getId());
 			p.executeUpdate();
-			conn.commit();
+			c.commit();
 			Utils.log("Peer " + peerInfo.getId() + " has been updated");
 		} catch (SQLException e) {
 			System.err.println(e.getMessage());
 		}
 	}
-	public static void insertStoredFile(Connection conn, FileStoredInfo fileInfo) {
+	public static void insertStoredFile(Connection c, Stored fileInfo) {
 		String peerRequesting = fileInfo.getPeerRequesting();
 		Integer desiredRepDegree = fileInfo.getDesiredRepDegree();
 		try {
-			PreparedStatement p = conn.prepareStatement(insertFileStored);
-			p.setString(1, fileInfo.getFileId());
+			PreparedStatement p = c.prepareStatement(insertFileStored);
+			p.setString(1, fileInfo.getfile());
 			p.setBoolean(2, fileInfo.getiAmResponsible());
 			if (peerRequesting == null) {
 				p.setNull(3, Types.VARCHAR);
@@ -104,20 +84,20 @@ public class DBUtils {
 				p.setInt(4, desiredRepDegree);
 			}
 			p.executeUpdate();
-			conn.commit();
-			System.out.println("File " + fileInfo.getFileId() + " has been stored in database");
+			c.commit();
+			System.out.println("File " + fileInfo.getfile() + " has been stored in database");
 		} catch (DerbySQLIntegrityConstraintViolationException e) {
 			Utils.LOGGER.info("Not a new INSERT, updating");
-			updateStoredFile(conn, fileInfo);
+			updateStoredFile(c, fileInfo);
 		} catch (SQLException e) {
 			System.err.println(e.getMessage());
 		}
 	}
-	public static void updateStoredFile(Connection conn, FileStoredInfo fileInfo) {
+	public static void updateStoredFile(Connection c, Stored fileInfo) {
 		String peerRequesting = fileInfo.getPeerRequesting();
 		Integer desiredRepDegree = fileInfo.getDesiredRepDegree();
 		try {
-			PreparedStatement p = conn.prepareStatement(updateFileStored);
+			PreparedStatement p = c.prepareStatement(updateFileStored);
 			p.setBoolean(1, fileInfo.getiAmResponsible());
 			if (peerRequesting == null) {
 				p.setNull(2, Types.VARCHAR);
@@ -129,124 +109,124 @@ public class DBUtils {
 			}else {
 				p.setInt(3, desiredRepDegree);
 			}
-			p.setString(4, fileInfo.getFileId());
+			p.setString(4, fileInfo.getfile());
 
 			p.executeUpdate();
-			conn.commit();
-			Utils.log("File " + fileInfo.getFileId() + " has been updated");
+			c.commit();
+			Utils.log("File " + fileInfo.getfile() + " has been updated");
 		} catch (SQLException e) {
 			System.err.println(e.getMessage());
 		}
 	}
 	
-	public static void setIamStoring(Connection conn, String fileId, Boolean iAmStoring) {
+	public static void setIamStoring(Connection c, String fileId, Boolean iAmStoring) {
 		try {
-			PreparedStatement p = conn.prepareStatement(setIamStoring);
+			PreparedStatement p = c.prepareStatement(setIamStoring);
 			p.setBoolean(1, iAmStoring);
 			p.setString(2, fileId);
 			p.executeUpdate();
-			conn.commit();
+			c.commit();
 		} catch (SQLException e) {
 			System.err.println(e.getMessage());
 		}
 	}
 	
 	
-	public static void insertStoredChunk(Connection conn, ChunkInfo chunkInfo) {
+	public static void insertStoredChunk(Connection c, Chunk chunkInfo) {
 		try {
-			PreparedStatement p = conn.prepareStatement(insertChunkStored);
-			p.setInt(1, chunkInfo.getChunkId());
-			p.setString(2, chunkInfo.getFileId());
-			if (chunkInfo.getActualRepDegree() != null) {
-				p.setInt(3, chunkInfo.getActualRepDegree());
+			PreparedStatement p = c.prepareStatement(insertChunkStored);
+			p.setInt(1, chunkInfo.getchunkid());
+			p.setString(2, chunkInfo.getfileid());
+			if (chunkInfo.getrepdegree() != null) {
+				p.setInt(3, chunkInfo.getrepdegree());
 			}else {
 				p.setNull(3, Types.INTEGER);
 			}
-			p.setInt(4, chunkInfo.getSize());
+			p.setInt(4, chunkInfo.getsize());
 			p.executeUpdate();
-			conn.commit();
-			Utils.log("Chunk " + chunkInfo.getFileId() + ":" + chunkInfo.getChunkId() + " has been stored");
+			c.commit();
+			Utils.log("Chunk " + chunkInfo.getfileid() + ":" + chunkInfo.getchunkid() + " has been stored");
 		} catch (DerbySQLIntegrityConstraintViolationException e) {
-			updateStoredChunkRepDegree(conn,chunkInfo);
+			updateStoredChunkRepDegree(c,chunkInfo);
 		} catch (SQLException e) {
 			System.err.println(e.getMessage());
 		}
 	}
-	public static void updateStoredChunkRepDegree(Connection conn, ChunkInfo chunkInfo) {
+	public static void updateStoredChunkRepDegree(Connection c, Chunk chunkInfo) {
 		//"UPDATE CHUNKSSTORED SET actual_rep_degree = ? WHERE file_id = ? AND chunk_id = ?"
 
 		try {
-			PreparedStatement p = conn.prepareStatement(updateChunkStoredRepDegree);
-			p.setInt(1, chunkInfo.getActualRepDegree());
-			p.setInt(2, chunkInfo.getChunkId());
-			p.setString(3, chunkInfo.getFileId());
+			PreparedStatement p = c.prepareStatement(updateChunkStoredRepDegree);
+			p.setInt(1, chunkInfo.getrepdegree());
+			p.setInt(2, chunkInfo.getchunkid());
+			p.setString(3, chunkInfo.getfileid());
 			p.executeUpdate();
-			conn.commit();
-			Utils.log("Chunk " + chunkInfo.getFileId() + ":" + chunkInfo.getChunkId() + " has been updated");
+			c.commit();
+			Utils.log("Chunk " + chunkInfo.getfileid() + ":" + chunkInfo.getchunkid() + " has been updated");
 		} catch (SQLException e) {
 			System.err.println(e.getMessage());
 		}
 	}
-	private static void updateBackupRequested(Connection conn, BackupRequest backupReq) {
+	private static void updateBackupRequested(Connection c, Backup backupReq) {
 		try {
-			PreparedStatement p = conn.prepareStatement(updateBackupRequested);
-			p.setInt(1, backupReq.getDesiredRepDegree());
-			p.setString(2, backupReq.getFileId());
+			PreparedStatement p = c.prepareStatement(updateBackupRequested);
+			p.setInt(1, backupReq.getrepdegree());
+			p.setString(2, backupReq.getid());
 			p.executeUpdate();
-			conn.commit();
-			Utils.log("BackupRequest: " + backupReq.getFileId() + " has been updated");
+			c.commit();
+			Utils.log("Backup: " + backupReq.getid() + " has been updated");
 		} catch (SQLException e) {
 			System.err.println(e.getMessage());
 		}
 	}
 	
-	public static void updateResponsible(Connection conn, String fileId, Boolean value) {
+	public static void updateResponsible(Connection c, String fileId, Boolean value) {
 		try {
-			PreparedStatement p = conn.prepareStatement(updateResponsible);
+			PreparedStatement p = c.prepareStatement(updateResponsible);
 			p.setBoolean(1, value);
 			p.setString(2, fileId);
 			p.executeUpdate();
-			conn.commit();
+			c.commit();
 		} catch (SQLException e) {
 			System.err.println(e.getMessage());
 		}
 	}
 	
-	public static void insertBackupRequested(Connection conn, BackupRequest backupRequest) {
-		Boolean wasRequested = wasBackupRequestedBefore(conn, backupRequest.getFileId());
+	public static void insertBackupRequested(Connection c, Backup backupRequest) {
+		Boolean wasRequested = wasBackupRequestedBefore(c, backupRequest.getid());
 		if (!wasRequested) {
 			// Create New
 			try {
-				PreparedStatement p = conn.prepareStatement(insertBackupRequested);
-				p.setString(1, backupRequest.getFileId());
-				p.setString(2, backupRequest.getFilename());
-				p.setInt(3, backupRequest.getDesiredRepDegree());
-				if (backupRequest.getEncryptKey() != null) {
-					p.setString(4, backupRequest.getEncryptKey());
+				PreparedStatement p = c.prepareStatement(insertBackupRequested);
+				p.setString(1, backupRequest.getid());
+				p.setString(2, backupRequest.getname());
+				p.setInt(3, backupRequest.getrepdegree());
+				if (backupRequest.getkey() != null) {
+					p.setString(4, backupRequest.getkey());
 				}else {
 					p.setNull(4, Types.VARCHAR);
 				}
-				p.setInt(5, backupRequest.getNumberOfChunks());
+				p.setInt(5, backupRequest.getchunksnumber());
 				p.executeUpdate();
-				conn.commit();
-				Utils.log("BackupRequest for file " + backupRequest.getFilename() + " has been stored");
+				c.commit();
+				Utils.log("Backup for file " + backupRequest.getname() + " has been stored");
 			} catch (SQLException e) {
 				System.err.println(e.getMessage());
 			}
 		} else {
 			// Update old
-			updateBackupRequested(conn,backupRequest);
+			updateBackupRequested(c,backupRequest);
 		}
 
 	}
-	public static boolean amIResponsible(Connection conn, String fileId) {
+	public static boolean amIResponsible(Connection c, String fileId) {
 		PreparedStatement p = null;
 		try {
-			p = conn.prepareStatement(getFileById);
+			p = c.prepareStatement(getFileById);
 			p.setString(1, fileId);
 			ResultSet result = p.executeQuery();
-			conn.setAutoCommit(false);
-			conn.commit();
+			c.setAutoCommit(false);
+			c.commit();
 			if (result.next()) {
 				return result.getBoolean("i_am_responsible");
 			}
@@ -263,16 +243,16 @@ public class DBUtils {
 		}
 		return false;
 	}
-	public static boolean checkStoredChunk(Connection conn, ChunkInfo chunkInfo) {
+	public static boolean checkStoredChunk(Connection c, Chunk chunkInfo) {
 
 		PreparedStatement p = null;
 		try {
 			
-			p = conn.prepareStatement(checkStoredChunk);
-			p.setString(1, chunkInfo.getFileId());
-			p.setInt(2, chunkInfo.getChunkId());
+			p = c.prepareStatement(checkStoredChunk);
+			p.setString(1, chunkInfo.getfileid());
+			p.setInt(2, chunkInfo.getchunkid());
 			ResultSet result = p.executeQuery();
-			conn.setAutoCommit(false);
+			c.setAutoCommit(false);
 			if (result.next()) {
 				int size = result.getInt(5);
 				return true && size > -1;
@@ -288,13 +268,13 @@ public class DBUtils {
 		}
 		return false;
 	}
-	public static ArrayList<BackupRequest> getBackupsRequested(Connection conn){
-		ArrayList<BackupRequest> array = new ArrayList<BackupRequest>();
+	public static ArrayList<Backup> getBackupsRequested(Connection c){
+		ArrayList<Backup> array = new ArrayList<Backup>();
 		try {
-			Statement stmt = conn.createStatement();
+			Statement stmt = c.createStatement();
 			ResultSet res = stmt.executeQuery("SELECT file_id, filename, desired_rep_degree,encrypt_key, numberOfChunks FROM BACKUPSREQUESTED");
 			while (res.next()) {
-				BackupRequest currentBackupRequest = new BackupRequest(res.getString(1),
+				Backup currentBackupRequest = new Backup(res.getString(1),
 						res.getString(2),
 						res.getString("encrypt_key"),
 						res.getInt(3), 
@@ -306,9 +286,9 @@ public class DBUtils {
 		}
 		return array;
 	}
-	public static PeerI getPeerWhichRequestedBackup(Connection conn, String fileId) {
+	public static Peer getPeerWhichRequestedBackup(Connection c, String fileId) {
 		try {
-			PreparedStatement p = conn.prepareStatement(getPeerWhichRequested);
+			PreparedStatement p = c.prepareStatement(getPeerWhichRequested);
 			p.setString(1, fileId);
 			ResultSet result = p.executeQuery();
 			if (result.next()) {
@@ -319,17 +299,17 @@ public class DBUtils {
 					e.printStackTrace();
 					return null;
 				}
-				return new PeerI(result.getString(1),address,result.getInt(3));
+				return new Peer(result.getString(1),address,result.getInt(3));
 			}
 		} catch (SQLException e) {
 			System.err.println(e.getMessage());
 		}
 		return null;
 	}
-	private static boolean wasBackupRequestedBefore(Connection conn, String fileId) {
+	private static boolean wasBackupRequestedBefore(Connection c, String fileId) {
 		PreparedStatement p;
 		try {
-			p = conn.prepareStatement(getBackupRequested);
+			p = c.prepareStatement(getBackupRequested);
 			p.setString(1, fileId);
 			ResultSet result =  p.executeQuery();
 			if (result.next()) {
@@ -340,15 +320,15 @@ public class DBUtils {
 		}
 		return false;
 	}
-	public static BackupRequest getBackupRequested(Connection conn, String fileId) {
+	public static Backup getBackupRequested(Connection c, String fileId) {
 		PreparedStatement p;
 		try {
-			p = conn.prepareStatement(getBackupRequested);
+			p = c.prepareStatement(getBackupRequested);
 			p.setString(1, fileId);
 			ResultSet result =  p.executeQuery();
 			if (result.next()) {
 
-				return new BackupRequest(result.getString("file_id"),
+				return new Backup(result.getString("file_id"),
 						result.getString("filename"),
 						result.getString("encrypt_key"),
 						result.getInt("desired_rep_degree"),
@@ -359,10 +339,10 @@ public class DBUtils {
 		}
 		return null;
 	}
-	public static int getDesiredRepDegree(Connection conn, String fileId) {
+	public static int getDesiredRepDegree(Connection c, String fileId) {
 		PreparedStatement p;
 		try {
-			p = conn.prepareStatement(getFileStored);
+			p = c.prepareStatement(getFileStored);
 			p.setString(1, fileId);
 			ResultSet result =  p.executeQuery();
 			if (result.next()) {
@@ -373,10 +353,10 @@ public class DBUtils {
 		}
 		return 0;
 	}
-	public static int getMaxRepDegree(Connection conn, String fileId) {
+	public static int getMaxRepDegree(Connection c, String fileId) {
 		PreparedStatement p;
 		try {
-			p = conn.prepareStatement(getActualRepDegree);
+			p = c.prepareStatement(getActualRepDegree);
 			p.setString(1, fileId);
 			ResultSet result =  p.executeQuery();
 			if (result.next()) {
@@ -387,10 +367,10 @@ public class DBUtils {
 		}
 		return 0;
 	}
-	public static boolean isFileStored(Connection conn, String fileId) {
+	public static boolean isFileStored(Connection c, String fileId) {
 		PreparedStatement p;
 		try {
-			p = conn.prepareStatement(getFileStored);
+			p = c.prepareStatement(getFileStored);
 			p.setString(1, fileId);
 			ResultSet result =  p.executeQuery();
 			return result.next() && result.getBoolean(3);
@@ -400,33 +380,33 @@ public class DBUtils {
 		return false;
 	}
 	
-	public static ArrayList<ChunkInfo> getAllChunksOfFile(Connection conn, String fileId) {
+	public static ArrayList<Chunk> getAllChunksOfFile(Connection c, String fileId) {
 		PreparedStatement p;
-		ArrayList<ChunkInfo> chunksInfo = new ArrayList<ChunkInfo>();
+		ArrayList<Chunk> chunksInfo = new ArrayList<Chunk>();
 		try {
-			p = conn.prepareStatement(getChunksOfFile);
+			p = c.prepareStatement(getChunksOfFile);
 			p.setString(1, fileId);
 			ResultSet result =  p.executeQuery();
 			while (result.next()) {
-				chunksInfo.add(new ChunkInfo(result.getInt(1), result.getString(2), result.getInt(3)));
+				chunksInfo.add(new Chunk(result.getInt(1), result.getString(2), result.getInt(3)));
 			}
 		} catch (SQLException e) {
 			System.err.println(e.getMessage());
 		}
 		return chunksInfo;
 	}
-	public static void deleteFile(Connection conn, String fileId) {
+	public static void deleteFile(Connection c, String fileId) {
 		try {
-			PreparedStatement p = conn.prepareStatement(deleteFileStored);
+			PreparedStatement p = c.prepareStatement(deleteFileStored);
 			p.setString(1, fileId);
 			p.executeUpdate();
 		} catch (SQLException e) {
 			System.err.println(e.getMessage());
 		}
 	}
-	public static void deleteFileFromBackupsRequested(Connection conn, String fileId) {
+	public static void deleteFileFromBackupsRequested(Connection c, String fileId) {
 		try {
-			PreparedStatement p = conn.prepareStatement(deleteFileRequested);
+			PreparedStatement p = c.prepareStatement(deleteFileRequested);
 			p.setString(1, fileId);
 			p.executeUpdate();
 		} catch (SQLException e) {
@@ -434,11 +414,11 @@ public class DBUtils {
 		}
 
 	}
-	public static ArrayList<String> getFilesToDelete(Connection conn, Timestamp time) {
+	public static ArrayList<String> getFilesToDelete(Connection c, Timestamp time) {
 		ArrayList<String> res = new ArrayList<String>();
 		PreparedStatement p;
 		try {
-			p = conn.prepareStatement(getFilesToDelete);
+			p = c.prepareStatement(getFilesToDelete);
 			p.setInt(1, Leases.LEASE_TIME);
 			p.setTimestamp(2, time);
 			ResultSet result = p.executeQuery();
@@ -451,24 +431,24 @@ public class DBUtils {
 		}
 		return res;
 	}
-	public static void updateFile(Connection conn, String fileId) {
+	public static void updateFile(Connection c, String fileId) {
 		try {
-			PreparedStatement p = conn.prepareStatement(updateFile);
+			PreparedStatement p = c.prepareStatement(updateFile);
 			p.setString(1, fileId);
 			p.executeUpdate();
-			conn.commit();
+			c.commit();
 		} catch (SQLException e) {
 			System.err.println(e.getMessage());
 		}
 	}
-	public static ArrayList<BackupRequest> getFilesToUpdate(Connection conn) {
-		ArrayList<BackupRequest> res = new ArrayList<BackupRequest>();
+	public static ArrayList<Backup> getFilesToUpdate(Connection c) {
+		ArrayList<Backup> res = new ArrayList<Backup>();
 		PreparedStatement p;
 		try {
-			p = conn.prepareStatement(getFilesToUpdate);
+			p = c.prepareStatement(getFilesToUpdate);
 			ResultSet result = p.executeQuery();
 			while (result.next()) {
-				res.add(new BackupRequest(
+				res.add(new Backup(
 						result.getString("file_id"),
 						result.getString("filename"),
 						result.getString("encrypt_key"),
@@ -481,14 +461,14 @@ public class DBUtils {
 		}
 		return res;
 	}
-	public static ArrayList<FileStoredInfo> getFilesIAmResponsible(Connection conn) {
-		ArrayList<FileStoredInfo> res = new ArrayList<FileStoredInfo>();
+	public static ArrayList<Stored> getFilesIAmResponsible(Connection c) {
+		ArrayList<Stored> res = new ArrayList<Stored>();
 		PreparedStatement p;
 		try {
-			p = conn.prepareStatement(getFiles);
+			p = c.prepareStatement(getFiles);
 			ResultSet result = p.executeQuery();
 			while (result.next()) {
-				res.add(new FileStoredInfo(
+				res.add(new Stored(
 						result.getString("file_id"), 
 						true, result.getInt("desired_rep_degree")));
 			}
