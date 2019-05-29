@@ -16,10 +16,10 @@ import java.util.Arrays;
 
 import chord.AbstractPeer;
 import chord.ChordManager;
-import database.BackupRequest;
+import database.Backup;
 import database.DBUtils;
 import database.Database;
-import database.FileStoredInfo;
+import database.Stored;
 import runnableProtocols.SendGetChunk;
 import runnableProtocols.SendInitDelete;
 import runnableProtocols.SendPutChunk;
@@ -89,7 +89,7 @@ public class Peer {
 		ReadInput readInputThread = new ReadInput(peer);
 		readInputThread.run();
 		server.closeConnection();
-		peer.getDatabase().closeConnection();
+		peer.getDatabase().endConnection();
 		SingletonThreadPoolExecutor.getInstance().get().shutdownNow();
 		System.out.println("Program Terminated");
 	}
@@ -192,7 +192,7 @@ public class Peer {
 			c = new Confidentiality(encryptKey);
 		}
 		encryptKey = new String(c.getKey(), StandardCharsets.ISO_8859_1);
-		BackupRequest backupRequest = new BackupRequest(fileID,filename,encryptKey, degree, n);
+		Backup backupRequest = new Backup(fileID,filename,encryptKey, degree, n);
 		DBUtils.insertBackupRequested(database.getConnection(), backupRequest);
 		int chunkNo = 0;
 		while(file.length > (chunkNo + 1)*LENGTH_OF_CHUNK) {
@@ -215,8 +215,8 @@ public class Peer {
 		
 	}
 
-	public void restore(BackupRequest backupRequest) {
-		Integer totalNumChunks = backupRequest.getNumberOfChunks();
+	public void restore(Backup backupRequest) {
+		Integer totalNumChunks = backupRequest.getchunksnumber();
 		for(int i = 0; i < totalNumChunks; i++) {
 			SendGetChunk th = new SendGetChunk(backupRequest, i,this.getChordManager());
 			SingletonThreadPoolExecutor.getInstance().get().execute(th);
@@ -231,20 +231,20 @@ public class Peer {
 	 * When a peer joins, tell him which files he is responsible for.
 	 */
 	public void sendResponsability() {
-		ArrayList<FileStoredInfo> filesIAmResponsible = DBUtils.getFilesIAmResponsible(this.database.getConnection());
-		ArrayList<FileStoredInfo> toSend = new ArrayList<FileStoredInfo> ();
+		ArrayList<Stored> filesIAmResponsible = DBUtils.getFilesIAmResponsible(this.database.getConnection());
+		ArrayList<Stored> toSend = new ArrayList<Stored> ();
 		AbstractPeer predecessor = this.chordManager.getPredecessor();
 		if (predecessor.isNull()) return;
 		if (predecessor.getId().equals(this.chordManager.getPeerInfo().getId())) return;
 		for(int i = 0; i < filesIAmResponsible.size(); i++) {
-			if(Utils.inBetween(this.chordManager.getPeerInfo().getId(), predecessor.getId(), filesIAmResponsible.get(i).getFileId())) {
-				DBUtils.updateResponsible(this.database.getConnection(),filesIAmResponsible.get(i).getFileId(), false);
+			if(Utils.inBetween(this.chordManager.getPeerInfo().getId(), predecessor.getId(), filesIAmResponsible.get(i).getfile())) {
+				DBUtils.updateResponsible(this.database.getConnection(),filesIAmResponsible.get(i).getfile(), false);
 				toSend.add(filesIAmResponsible.get(i));
 			}
 		}
 		if (toSend.isEmpty())return;
 		System.out.println("Sending resposibility for files to peer: " + predecessor.getId());
-		toSend.forEach(k->System.out.println(k.getFileId()));
+		toSend.forEach(k->System.out.println(k.getfile()));
 		String msg = MessageFactory.getResponsible(this.chordManager.getPeerInfo().getId(), toSend);
 		Client.sendMessage(predecessor.getAddr(), predecessor.getPort(), msg, false);
 		System.out.println("Sent responsible");

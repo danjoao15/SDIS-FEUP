@@ -7,8 +7,8 @@ import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.concurrent.TimeUnit;
 
-import database.BackupRequest;
-import database.ChunkInfo;
+import database.Backup;
+import database.Chunk;
 import database.DBUtils;
 import utils.Utils;
 
@@ -39,13 +39,13 @@ public class Leases implements Runnable {
 	}
 
 	private void updateFiles(Timestamp time) {
-		ArrayList<BackupRequest> filesToUpdate = DBUtils.getFilesToUpdate(peer.getConnection());
+		ArrayList<Backup> filesToUpdate = DBUtils.getFilesToUpdate(peer.getConnection());
 		
 		for(int i = 0; i < filesToUpdate.size(); i++) {
 			
-			peer.backup(filesToUpdate.get(i).getFilename(),
-					filesToUpdate.get(i).getDesiredRepDegree(),
-					filesToUpdate.get(i).getEncryptKey());
+			peer.backup(filesToUpdate.get(i).getname(),
+					filesToUpdate.get(i).getrepdegree(),
+					filesToUpdate.get(i).getkey());
 			Utils.LOGGER.info("Lease:Updated file: " + filesToUpdate.get(i));
 		}
 
@@ -57,10 +57,10 @@ public class Leases implements Runnable {
 			System.out.println("Leases: Found " + filesToDelete.size() + " to delete");
 		}
 		for(int i = 0; i < filesToDelete.size(); i++) {
-			ArrayList<ChunkInfo> allChunks = DBUtils.getAllChunksOfFile(peer.getConnection(), filesToDelete.get(i));
+			ArrayList<Chunk> allChunks = DBUtils.getAllChunksOfFile(peer.getConnection(), filesToDelete.get(i));
 			allChunks.forEach(chunk -> {
-				Utils.deleteFile(Peer.getPath().resolve(chunk.getFilename()));
-				Peer.decreaseStorageUsed(chunk.getSize());
+				Utils.deleteFile(Peer.getPath().resolve(chunk.getfile()));
+				Peer.decreaseStorageUsed(chunk.getsize());
 			});
 			DBUtils.deleteFile(peer.getConnection(), filesToDelete.get(i));
 			Utils.LOGGER.info("Lease:Deleted file: " + filesToDelete.get(i));

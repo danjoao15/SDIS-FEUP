@@ -7,7 +7,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import chord.PeerI;
-import database.FileStoredInfo;
+import database.Stored;
 
 public class MessageFactory {
 
@@ -48,10 +48,10 @@ public class MessageFactory {
 		String msg = getFirstLine(MessageType.SUCCESSOR,"1.0",senderId);
 		return appendLine(msg, new Object[] {peer.getId(),peer.getAddr().getHostAddress(),peer.getPort()});
 	}
-	public static String getResponsible(String string, ArrayList<FileStoredInfo> toSend) {
+	public static String getResponsible(String string, ArrayList<Stored> toSend) {
 		String msg = getFirstLine(MessageType.RESPONSIBLE,"1.0",string);
 		for(int i = 0; i < toSend.size(); i++) {
-			msg += appendLine(msg, new Object[] {toSend.get(i).getFileId(),toSend.get(i).getDesiredRepDegree()});
+			msg += appendLine(msg, new Object[] {toSend.get(i).getfile(),toSend.get(i).getrepdegree()});
 		}
 		return msg;
 	}

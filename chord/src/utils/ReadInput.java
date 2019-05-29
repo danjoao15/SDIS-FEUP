@@ -7,7 +7,7 @@ import java.util.InputMismatchException;
 import java.util.Scanner;
 
 import communication.Peer;
-import database.BackupRequest;
+import database.Backup;
 import database.DBUtils;
 
 public class ReadInput{
@@ -62,13 +62,13 @@ public class ReadInput{
 	}
 	
 	private static void restoreOption(Scanner scanner, Peer peer) {
-		ArrayList<BackupRequest> allRequests = DBUtils.getBackupsRequested(peer.getConnection());
+		ArrayList<Backup> allRequests = DBUtils.getBackupsRequested(peer.getConnection());
 		if (allRequests.size() > 0) {
 			int option = -1;
 			do {
 				System.out.println("Select a file to restore:");
 				for (int i = 0; i < allRequests.size(); i++) {
-					System.out.println(i + ". " + allRequests.get(i).getFilename() + " -> " + allRequests.get(i).getFileId());
+					System.out.println(i + ". " + allRequests.get(i).getname() + " -> " + allRequests.get(i).getid());
 				}
 				try {
 					option = scanner.nextInt();
@@ -84,13 +84,13 @@ public class ReadInput{
 	}
 	
 	private static void deleteOption(Scanner scanner, Peer peer) {
-		ArrayList<BackupRequest> allRequests = DBUtils.getBackupsRequested(peer.getConnection());
+		ArrayList<Backup> allRequests = DBUtils.getBackupsRequested(peer.getConnection());
 		if (allRequests.size() > 0) {
 			int option = -1;
 			do {
 				System.out.println("Select a file to delete:");
 				for (int i = 0; i < allRequests.size(); i++) {
-					System.out.println(i + ". " + allRequests.get(i).getFilename() + " -> " + allRequests.get(i).getFileId());
+					System.out.println(i + ". " + allRequests.get(i).getname() + " -> " + allRequests.get(i).getid());
 				}
 				try {
 					option = scanner.nextInt();
@@ -99,7 +99,7 @@ public class ReadInput{
 					scanner.nextLine();
 				}
 			} while(option < 0 || option >= allRequests.size());
-			peer.delete(allRequests.get(option).getFileId());
+			peer.delete(allRequests.get(option).getid());
 			
 		} else {
 			System.out.println("You need to backup files before deleting");

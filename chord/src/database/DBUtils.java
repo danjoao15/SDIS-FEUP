@@ -7,8 +7,8 @@ import java.util.ArrayList;
 
 import org.apache.derby.shared.common.error.DerbySQLIntegrityConstraintViolationException;
 
-import chord.Peer;
-import program.Leases;
+import chord.PeerI;
+import communication.Leases;
 import utils.Utils;
 
 public class DBUtils {
@@ -37,42 +37,42 @@ public class DBUtils {
 	private static final String getFilesToUpdate = "SELECT * FROM BACKUPSREQUESTED";
 	private static final String getFiles = "SELECT * FROM FILESSTORED "	+ "WHERE i_am_responsible";
 
-	public static void insertPeer(Connection c, Peer peerInfo) {
+	public static void insertPeer(Connection c, PeerI peer) {
 		try {
 			PreparedStatement p = c.prepareStatement(insertPeer);
-			p.setString(1, peerInfo.getId());
-			p.setString(2, peerInfo.getAddr().getHostAddress());
-			p.setInt(3, peerInfo.getPort());
+			p.setString(1, peer.getId());
+			p.setString(2, peer.getAddr().getHostAddress());
+			p.setInt(3, peer.getPort());
 			p.executeUpdate();
 			c.commit();
-			Utils.log("Peer " + peerInfo.getId() + " has been stored");
+			Utils.log("PeerI " + peer.getId() + " has been stored");
 		} catch (DerbySQLIntegrityConstraintViolationException e) {
 			Utils.LOGGER.info("Not a new INSERT, updating");
-			updatePeer(c, peerInfo);
+			updatePeer(c, peer);
 		} catch (SQLException e) {
 			System.err.println(e.getMessage());
 		}
 	}
-	private static void updatePeer(Connection c, Peer peerInfo) {
+	private static void updatePeer(Connection c, PeerI peer) {
 		try {
 			PreparedStatement p = c.prepareStatement(updatePeer);
-			p.setString(1, peerInfo.getAddr().getHostAddress());
-			p.setInt(2, peerInfo.getPort());
-			p.setString(3, peerInfo.getId());
+			p.setString(1, peer.getAddr().getHostAddress());
+			p.setInt(2, peer.getPort());
+			p.setString(3, peer.getId());
 			p.executeUpdate();
 			c.commit();
-			Utils.log("Peer " + peerInfo.getId() + " has been updated");
+			Utils.log("PeerI " + peer.getId() + " has been updated");
 		} catch (SQLException e) {
 			System.err.println(e.getMessage());
 		}
 	}
 	public static void insertStoredFile(Connection c, Stored fileInfo) {
-		String peerRequesting = fileInfo.getPeerRequesting();
-		Integer desiredRepDegree = fileInfo.getDesiredRepDegree();
+		String peerRequesting = fileInfo.getpeer();
+		Integer desiredRepDegree = fileInfo.getrepdegree();
 		try {
 			PreparedStatement p = c.prepareStatement(insertFileStored);
 			p.setString(1, fileInfo.getfile());
-			p.setBoolean(2, fileInfo.getiAmResponsible());
+			p.setBoolean(2, fileInfo.getchunkstored());
 			if (peerRequesting == null) {
 				p.setNull(3, Types.VARCHAR);
 			} else {
@@ -94,11 +94,11 @@ public class DBUtils {
 		}
 	}
 	public static void updateStoredFile(Connection c, Stored fileInfo) {
-		String peerRequesting = fileInfo.getPeerRequesting();
-		Integer desiredRepDegree = fileInfo.getDesiredRepDegree();
+		String peerRequesting = fileInfo.getpeer();
+		Integer desiredRepDegree = fileInfo.getrepdegree();
 		try {
 			PreparedStatement p = c.prepareStatement(updateFileStored);
-			p.setBoolean(1, fileInfo.getiAmResponsible());
+			p.setBoolean(1, fileInfo.getchunkstored());
 			if (peerRequesting == null) {
 				p.setNull(2, Types.VARCHAR);
 			} else {
@@ -286,7 +286,7 @@ public class DBUtils {
 		}
 		return array;
 	}
-	public static Peer getPeerWhichRequestedBackup(Connection c, String fileId) {
+	public static PeerI getPeerWhichRequestedBackup(Connection c, String fileId) {
 		try {
 			PreparedStatement p = c.prepareStatement(getPeerWhichRequested);
 			p.setString(1, fileId);
@@ -299,7 +299,7 @@ public class DBUtils {
 					e.printStackTrace();
 					return null;
 				}
-				return new Peer(result.getString(1),address,result.getInt(3));
+				return new PeerI(result.getString(1),address,result.getInt(3));
 			}
 		} catch (SQLException e) {
 			System.err.println(e.getMessage());

@@ -25,10 +25,10 @@ import javax.net.ssl.SSLSocket;
 import chord.AbstractPeer;
 import chord.ChordManager;
 import chord.PeerI;
-import database.BackupRequest;
-import database.ChunkInfo;
+import database.Backup;
+import database.Chunk;
 import database.DBUtils;
-import database.FileStoredInfo;
+import database.Stored;
 import utils.Confidentiality;
 import utils.Utils;
 
@@ -153,8 +153,8 @@ public class ParseMessageAndSendResponse implements Runnable {
 			String[] currentLine = lines[i].split(" ");
 			String fileID = currentLine[0];
 			int degree = Integer.valueOf(currentLine[1]);
-			FileStoredInfo fileInfo = new FileStoredInfo(fileID, true);
-			fileInfo.setDesiredRepDegree(degree);
+			Stored fileInfo = new Stored(fileID, true);
+			fileInfo.setrepdegree(degree);
 			DBUtils.insertStoredFile(dbConnection, fileInfo);
 		}
 		return null;
@@ -189,13 +189,13 @@ public class ParseMessageAndSendResponse implements Runnable {
 		String file_id = secondLine[0].trim();
 		int chunkNo = Integer.parseInt(secondLine[1]);
 
-		BackupRequest b = DBUtils.getBackupRequested(dbConnection, file_id);
+		Backup b = DBUtils.getBackupRequested(dbConnection, file_id);
 
 		
-		Confidentiality c = new Confidentiality(b.getEncryptKey());
+		Confidentiality c = new Confidentiality(b.getkey());
 		
 		body_bytes = c.decrypt(body_bytes);
-		Path filepath = Peer.getPath().resolve("restoreFile-" + b.getFilename());
+		Path filepath = Peer.getPath().resolve("restoreFile-" + b.getname());
 
 		try {
 			Files.createFile(filepath);
@@ -246,9 +246,9 @@ public class ParseMessageAndSendResponse implements Runnable {
 		String fileID = secondLine[2];
 		Integer chunkNo = Integer.valueOf(secondLine[3]);
 
-		ChunkInfo chunkInfo = new ChunkInfo(chunkNo, fileID);
+		Chunk chunkInfo = new Chunk(chunkNo, fileID);
 		if(DBUtils.checkStoredChunk(dbConnection, chunkInfo )) { //Tenho o chunk
-			String body = Utils.readFile(Peer.getPath().resolve(chunkInfo.getFilename()).toString());
+			String body = Utils.readFile(Peer.getPath().resolve(chunkInfo.getfile()).toString());
 			String message = MessageFactory.getChunk(this.myPeerID, fileID, chunkNo, body.getBytes(StandardCharsets.ISO_8859_1));
 			Client.sendMessage(addr, port, message, false);
 		} else { //ReSend GETCHUNK to successor
@@ -264,10 +264,10 @@ public class ParseMessageAndSendResponse implements Runnable {
 		System.out.println("Received Delete for file: " + fileToDelete + ". Rep Degree: " + repDegree);
 		boolean isFileStored = DBUtils.isFileStored(dbConnection, fileToDelete);
 		if (isFileStored) {
-			ArrayList<ChunkInfo> allChunks = DBUtils.getAllChunksOfFile(dbConnection, fileToDelete);
+			ArrayList<Chunk> allChunks = DBUtils.getAllChunksOfFile(dbConnection, fileToDelete);
 			allChunks.forEach(chunk -> {
-				Utils.deleteFile(Peer.getPath().resolve(chunk.getFilename()));
-				Peer.decreaseStorageUsed(chunk.getSize());
+				Utils.deleteFile(Peer.getPath().resolve(chunk.getfile()));
+				Peer.decreaseStorageUsed(chunk.getsize());
 			});
 			DBUtils.deleteFile(dbConnection, fileToDelete);
 			repDegree--;
@@ -305,7 +305,7 @@ public class ParseMessageAndSendResponse implements Runnable {
 		Integer repDegree = Integer.valueOf(lines[2]);
 		
 		boolean iAmResponsible = DBUtils.amIResponsible(dbConnection, fileID);
-		ChunkInfo chunkInfo = new ChunkInfo(chunkNo,fileID);
+		Chunk chunkInfo = new Chunk(chunkNo,fileID);
 		boolean chunkExists = DBUtils.checkStoredChunk(dbConnection, chunkInfo);
 		
 		if(iAmResponsible) {
@@ -313,11 +313,11 @@ public class ParseMessageAndSendResponse implements Runnable {
 			PeerI peerWhichRequested = DBUtils.getPeerWhichRequestedBackup(dbConnection, fileID);
 			if(chunkExists) { //Exists
 				repDegree++; // I am also storing the chunk
-				chunkInfo.setActualRepDegree(repDegree);
+				chunkInfo.setrepdegree(repDegree);
 				DBUtils.updateStoredChunkRepDegree(dbConnection, chunkInfo);
 			} else {
-				chunkInfo.setActualRepDegree(repDegree);
-				chunkInfo.setSize(-1);
+				chunkInfo.setrepdegree(repDegree);
+				chunkInfo.setsize(-1);
 				DBUtils.insertStoredChunk(dbConnection, chunkInfo); //size -1 means that I do not have stored the chunk
 			}
 			
@@ -363,16 +363,16 @@ public class ParseMessageAndSendResponse implements Runnable {
 
 		PeerI peerThatRequestedBackup = new PeerI(id,addr,port);
 		DBUtils.insertPeer(dbConnection, peerThatRequestedBackup);
-		FileStoredInfo fileInfo = new FileStoredInfo(fileID, true);
-		fileInfo.setPeerRequesting(peerThatRequestedBackup.getId());
-		fileInfo.setDesiredRepDegree(replicationDegree);
+		Stored fileInfo = new Stored(fileID, true);
+		fileInfo.setpeer(peerThatRequestedBackup.getId());
+		fileInfo.setrepdegree(replicationDegree);
 		DBUtils.insertStoredFile(dbConnection, fileInfo);
 		
 
 		if(id.equals(myPeerID)) {//sou o dono do ficheiro que quero fazer backup...
 			//nao faz senido guardarmos um ficheiro com o chunk, visto que guardamos o ficheiro
 			//enviar o KEEPCHUNK
-			DBUtils.setIamStoring(dbConnection, fileInfo.getFileId(), false);
+			DBUtils.setIamStoring(dbConnection, fileInfo.getfile(), false);
 			PeerI nextPeer = chordManager.getSuccessor(0);
 			String message = MessageFactory.getKeepChunk(id, addr, port, fileID, chunkNo, replicationDegree, body_bytes);
 			Client.sendMessage(nextPeer.getAddr(),nextPeer.getPort(), message, false);
@@ -383,7 +383,7 @@ public class ParseMessageAndSendResponse implements Runnable {
 			Utils.LOGGER.info("Writing/Saving chunk");
 			try {
 				Utils.writeToFile(filePath, body_bytes);
-				DBUtils.insertStoredChunk(dbConnection, new ChunkInfo(chunkNo,fileID, body_bytes.length));
+				DBUtils.insertStoredChunk(dbConnection, new Chunk(chunkNo,fileID, body_bytes.length));
 				
 			} catch (IOException e) {
 				e.printStackTrace();
@@ -444,8 +444,8 @@ public class ParseMessageAndSendResponse implements Runnable {
 		}
 
 		if(!Peer.capacityExceeded(body_bytes.length)) { //tem espaco para fazer o backup
-			DBUtils.insertStoredFile(dbConnection, new FileStoredInfo(fileID, false));
-			DBUtils.insertStoredChunk(dbConnection, new ChunkInfo(chunkNo,fileID, body_bytes.length));
+			DBUtils.insertStoredFile(dbConnection, new Stored(fileID, false));
+			DBUtils.insertStoredChunk(dbConnection, new Chunk(chunkNo,fileID, body_bytes.length));
 			try {
 				Utils.writeToFile(filePath, body_bytes);
 			} catch (IOException e) {

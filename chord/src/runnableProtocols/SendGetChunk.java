@@ -7,15 +7,15 @@ import chord.ChordManager;
 import chord.PeerI;
 import communication.Client;
 import communication.MessageFactory;
-import database.BackupRequest;
+import database.Backup;
 
 public class SendGetChunk implements Runnable {
 
-	BackupRequest backupRequest;
+	Backup backupRequest;
 	int chunkNo;
 	ChordManager chord;
 
-	public SendGetChunk(BackupRequest backupRequest, int chunkNo, ChordManager chord) {
+	public SendGetChunk(Backup backupRequest, int chunkNo, ChordManager chord) {
 		super();
 		this.backupRequest = backupRequest;
 		this.chunkNo = chunkNo;
@@ -24,8 +24,8 @@ public class SendGetChunk implements Runnable {
 
 	@Override
 	public void run() {
-		PeerI owner = chord.getChunkOwner(backupRequest.getFileId());
-		String getChunkMessage = MessageFactory.getGetChunk(chord.getPeerInfo().getId(), chord.getPeerInfo().getAddr(),chord.getPeerInfo().getPort(), this.backupRequest.getFileId(), this.chunkNo);
+		PeerI owner = chord.getChunkOwner(backupRequest.getid());
+		String getChunkMessage = MessageFactory.getGetChunk(chord.getPeerInfo().getId(), chord.getPeerInfo().getAddr(),chord.getPeerInfo().getPort(), this.backupRequest.getid(), this.chunkNo);
 		Client.sendMessage(owner.getAddr(), owner.getPort(), getChunkMessage, false);
 	}
 
