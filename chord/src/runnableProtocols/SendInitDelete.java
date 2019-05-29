@@ -3,7 +3,7 @@ package runnableProtocols;
 import chord.ChordManager;
 import chord.PeerI;
 import communication.Client;
-import communication.MessageFactory;
+import communication.MsgFactory;
 import utils.Utils;
 
 public class SendInitDelete implements Runnable{
@@ -21,7 +21,7 @@ public class SendInitDelete implements Runnable{
 	@Override
 	public void run() {
 		PeerI successor = chordManager.getChunkOwner(fileId);
-		String message = MessageFactory.getInitDelete(senderId, fileId);
+		String message = MsgFactory.getInitDelete(senderId, fileId);
 		Utils.LOGGER.info("Sending InitDelete for file: " + fileId);
 		Client.sendMessage(successor.getAddr(), successor.getPort(), message, false);
 		System.out.println("Sent request to delete file: " + fileId);

@@ -1,7 +1,7 @@
 package chord;
 
 import communication.Client;
-import communication.MessageFactory;
+import communication.MsgFactory;
 import utils.Utils;
 
 public class CheckPredecessor implements Runnable {
@@ -23,7 +23,7 @@ public class CheckPredecessor implements Runnable {
 			}
 			Utils.LOGGER.info("My predecessor is " + predecessor.getId());
 			if (predecessor.getId().equals(myPeerId)) return;
-			String pingMessage = MessageFactory.getPing(myPeerId);
+			String pingMessage = MsgFactory.getPing(myPeerId);
 			String response = Client.sendMessage(predecessor.getAddr(), predecessor.getPort(), pingMessage, true);
 			if (response == null) {
 				Utils.LOGGER.finest("Could not establish connection with predecessor");

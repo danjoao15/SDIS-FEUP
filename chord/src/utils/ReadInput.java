@@ -6,15 +6,15 @@ import java.util.ArrayList;
 import java.util.InputMismatchException;
 import java.util.Scanner;
 
-import communication.Peer;
+import communication.PeerMain;
 import database.Backup;
 import database.DBUtils;
 
 public class ReadInput{
 
-	private Peer peer;
+	private PeerMain peer;
 	
-	public ReadInput(Peer peer){
+	public ReadInput(PeerMain peer){
 		this.peer = peer;
 	}
 	
@@ -61,7 +61,7 @@ public class ReadInput{
 		
 	}
 	
-	private static void restoreOption(Scanner scanner, Peer peer) {
+	private static void restoreOption(Scanner scanner, PeerMain peer) {
 		ArrayList<Backup> allRequests = DBUtils.getBackupsRequested(peer.getConnection());
 		if (allRequests.size() > 0) {
 			int option = -1;
@@ -83,7 +83,7 @@ public class ReadInput{
 		}
 	}
 	
-	private static void deleteOption(Scanner scanner, Peer peer) {
+	private static void deleteOption(Scanner scanner, PeerMain peer) {
 		ArrayList<Backup> allRequests = DBUtils.getBackupsRequested(peer.getConnection());
 		if (allRequests.size() > 0) {
 			int option = -1;
@@ -108,7 +108,7 @@ public class ReadInput{
 
 	}
 
-	private static void backupOption(Scanner in, Peer peer) {
+	private static void backupOption(Scanner in, PeerMain peer) {
 		System.out.println("FileName:");
 		String filename;
 		filename = in.next();

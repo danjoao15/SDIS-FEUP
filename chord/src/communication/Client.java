@@ -12,55 +12,51 @@ import javax.net.ssl.SSLSocketFactory;
 import utils.Utils;
 
 public class Client {
-	private static ArrayList<String> cipher = new ArrayList<String>(Arrays.asList("TLS_DHE_RSA_WITH_AES_128_CBC_SHA"));
+	private static ArrayList<String> cipherString = new ArrayList<String>(Arrays.asList("TLS_DHE_RSA_WITH_AES_128_CBC_SHA"));
 	
 
-	public static String sendMessage(InetAddress addr, int port, String message, boolean waitForResponse) {
+	public static String sendMessage(InetAddress address, int port, String message, boolean wait) {
 
 		String response = null;
 		SSLSocketFactory socketFactory = (SSLSocketFactory) SSLSocketFactory.getDefault();
 		SSLSocket socket;
 		try {
-			socket = (SSLSocket) socketFactory.createSocket(addr, port);
+			socket = (SSLSocket) socketFactory.createSocket(address, port);
 			socket.setSoTimeout(5000);
 		} catch (IOException e) {
 			System.err.println("Connection refused - couldn't connect to server");
 			return null;
 		}
 
-		socket.setEnabledCipherSuites(cipher.toArray(new String[0]));
+		socket.setEnabledCipherSuites(cipherString.toArray(new String[0]));
 
 		try {
 			send(message, socket);
-		} catch (IOException e1) {
+		} catch (IOException error1) {
 			System.err.println("Connection refused - couldn't send message");
 			return null;
 		}
-		if(waitForResponse) {
+		if(wait) {
 			response = getResponse(socket);
 		}
 		try {
 			socket.close();
-		} catch (IOException e) {
+		} catch (IOException error0) {
 			System.err.println("Error closing connection");
 			return null;
 		}
 		return response;
 	}
 
-	/**
-	 * Write to the socket (send message)
-	 * @throws IOException 
-	 */
 	public static void send(String message, SSLSocket socket) throws IOException {
-		byte[] sendData = encode(message.getBytes(StandardCharsets.ISO_8859_1));
+		byte[] sendData = encodeData(message.getBytes(StandardCharsets.ISO_8859_1));
 
 		OutputStream sendStream = socket.getOutputStream();
 		sendStream.write(sendData);
 		sendStream.write('\t');
 	}
 
-	private static byte[] encode(byte[] sendData) {
+	private static byte[] encodeData(byte[] sendData) {
 		ArrayList<Byte> res = new ArrayList<Byte>();
 		for(int i = 0; i < sendData.length; i++) {
 			if(sendData[i]=='\t') {
@@ -83,15 +79,12 @@ public class Client {
 		return a;
 	}
 
-	/**
-	 * Receives the message's response
-	 */
 	public static String getResponse(SSLSocket socket) {
 		byte[] readData = new byte[1024 + Utils.MAX_LENGTH_CHUNK];
 		InputStream readStream;
 		try {
 			readStream = socket.getInputStream();
-		} catch (IOException e) {
+		} catch (IOException error2) {
 			System.err.println("Error getting input stream");
 			return null;
 		}
@@ -100,13 +93,13 @@ public class Client {
 		} catch(SocketTimeoutException e) {
 			System.err.println("Socket timeout");
 			return null;
-		} catch (IOException e) {
+		} catch (IOException errror3) {
 			System.err.println("Error reading");
 			return null;
 		}
 		try {
 			socket.close();
-		} catch (IOException e) {
+		} catch (IOException error4) {
 			System.err.println("Error closing connection");;
 			return null;
 		}

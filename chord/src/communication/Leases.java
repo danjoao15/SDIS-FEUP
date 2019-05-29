@@ -22,9 +22,9 @@ public class Leases implements Runnable {
 	public static final int HALF_LEASE_TIME = 30;
 	public static final int LEASE_TIME = 2*HALF_LEASE_TIME;
 	public static final TimeUnit LEASE_UNIT = TimeUnit.SECONDS;
-	Peer peer;
+	PeerMain peer;
 
-	public Leases(Peer peer) {
+	public Leases(PeerMain peer) {
 		super();
 		this.peer = peer;
 	}
@@ -59,8 +59,8 @@ public class Leases implements Runnable {
 		for(int i = 0; i < filesToDelete.size(); i++) {
 			ArrayList<Chunk> allChunks = DBUtils.getAllChunksOfFile(peer.getConnection(), filesToDelete.get(i));
 			allChunks.forEach(chunk -> {
-				Utils.deleteFile(Peer.getPath().resolve(chunk.getfile()));
-				Peer.decreaseStorageUsed(chunk.getsize());
+				Utils.deleteFile(PeerMain.getPath().resolve(chunk.getfile()));
+				PeerMain.decreaseStorageUsed(chunk.getsize());
 			});
 			DBUtils.deleteFile(peer.getConnection(), filesToDelete.get(i));
 			Utils.LOGGER.info("Lease:Deleted file: " + filesToDelete.get(i));

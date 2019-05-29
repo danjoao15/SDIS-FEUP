@@ -1,8 +1,8 @@
 package chord;
 
 import communication.Client;
-import communication.MessageFactory;
-import communication.MessageType;
+import communication.MsgFactory;
+import communication.MsgType;
 import utils.Utils;
 
 public class Rebuild implements Runnable {
@@ -32,7 +32,7 @@ public class Rebuild implements Runnable {
 			String myPeerId = this.chordManager.getPeerInfo().getId();
 			Utils.LOGGER.finest("Running Rebuild\n");
 			PeerI nextPeer = this.chordManager.getNextPeer();
-			String RebuildMessage = MessageFactory.getHeader(MessageType.REBUILD, "1.0", myPeerId);
+			String RebuildMessage = MsgFactory.getHeader(MsgType.REBUILD, "1.0", myPeerId);
 			String response = Client.sendMessage(nextPeer.getAddr(), nextPeer.getPort(), RebuildMessage, true);
 			if(response == null) {
 				Utils.LOGGER.warning("Next peer dropped");
@@ -49,7 +49,7 @@ public class Rebuild implements Runnable {
 			AbstractPeer predecessor = chordManager.getPredecessor();
 			if (predecessor.isNull()) return;
 			if(myPeerId.equals(predecessor.getId())) return; //do not send to myself
-			String successorsMsg = MessageFactory.getSuccessors(myPeerId, chordManager.getNextPeers());
+			String successorsMsg = MsgFactory.getSuccessors(myPeerId, chordManager.getNextPeers());
 			Client.sendMessage(predecessor.getAddr(), predecessor.getPort(), successorsMsg, false);
 			
 		} catch(Exception e) {

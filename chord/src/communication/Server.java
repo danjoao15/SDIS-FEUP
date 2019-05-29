@@ -2,7 +2,6 @@ package communication;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.ArrayList;
 
 import javax.net.ssl.SSLServerSocket;
 import javax.net.ssl.SSLServerSocketFactory;
@@ -15,9 +14,8 @@ public class Server implements Runnable {
 
 	public static final int MAX_LENGTH_PACKET = 300;
 
-	private ArrayList<String> cipher_list;
 	private int port_number;
-	private Peer peer = null;
+	private PeerMain peer = null;
 	private SSLServerSocket serverSocket;
 	
 	public Server(String[] cipher_suite, int port) throws Exception {
@@ -26,11 +24,6 @@ public class Server implements Runnable {
 
 		setSystemProperties();
 
-		/*this.cipher_list = new ArrayList<String>();
-
-		for (int i = 1; i < cipher_suite.length; i++) {
-			this.cipher_list.add(cipher_suite[i]);
-		}*/
 	}
 
 	@Override
@@ -44,14 +37,10 @@ public class Server implements Runnable {
 			e.printStackTrace();
 			return;
 		}
-		/*String[] a = serverSocket.getEnabledCipherSuites();
-		for(String b: a) {
-			System.out.println(b);
-		}*/
+
 		serverSocket.setNeedClientAuth(true);
 		serverSocket.setEnabledProtocols(serverSocket.getSupportedProtocols());
 
-		//this.cipher_list.toArray(new String[0]);
 
 		while (true) {
 			SSLSocket socket;
@@ -126,17 +115,13 @@ public class Server implements Runnable {
 		return readData;
 	}
 
-	/**
-	 * @return the peer
-	 */
-	public Peer getPeer() {
+
+	public PeerMain getPeer() {
 		return peer;
 	}
 
-	/**
-	 * @param peer the peer to set
-	 */
-	public void setPeer(Peer peer) {
+
+	public void setPeer(PeerMain peer) {
 		this.peer = peer;
 	}
 

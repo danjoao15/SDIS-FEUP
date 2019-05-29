@@ -2,7 +2,7 @@ package runnableProtocols;
 
 import java.util.Arrays;
 import communication.Client;
-import communication.MessageFactory;
+import communication.MsgFactory;
 import chord.ChordManager;
 import chord.PeerI;
 
@@ -27,7 +27,7 @@ public class SendPutChunk implements Runnable {
 	@Override
 	public void run() {
 		PeerI owner = chord.getChunkOwner(fileID);
-		String putChunkMessage = MessageFactory.getPutChunk(senderID, owner.getAddr(),owner.getPort(), this.fileID, this.chunkNo, this.replicationDeg, this.body);
+		String putChunkMessage = MsgFactory.getPutChunk(senderID, owner.getAddr(),owner.getPort(), this.fileID, this.chunkNo, this.replicationDeg, this.body);
 		Client.sendMessage(owner.getAddr(), owner.getPort(), putChunkMessage, false);
 
 	}

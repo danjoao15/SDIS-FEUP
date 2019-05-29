@@ -2,7 +2,6 @@ package chord;
 
 import java.net.InetAddress;
 import java.net.UnknownHostException;
-import java.nio.file.Path;
 public class PeerI extends AbstractPeer {
 	
 //	private UnsignedByte id;
