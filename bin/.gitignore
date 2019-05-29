@@ -1,14 +1,6 @@
-/BackupSender.class
-/ClientCalls.class
-/ClientMain.class
-/Constants.class
-/MyThreadFactory.class
-/PutChunkProcessor.class
-/Server.class
-/ServerMain.class
-/StoredReceiver.class
 /chord/
 /communication/
 /database/
+/program/
 /runnableProtocols/
 /utils/
