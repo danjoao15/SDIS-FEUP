@@ -21,7 +21,7 @@ import database.DatabaseManager;
 import database.Database;
 import database.Stored;
 import protocols.SendGetChunk;
-import protocols.SendDelete;
+import protocols.SendIDelete;
 import protocols.SendPutChunk;
 import util.Confidential;
 import util.IOManager;
@@ -186,7 +186,7 @@ public class PeerMain {
 
 	public void delete(String fileID) {
 		DatabaseManager.deleteBackupRequest(getConnection(), fileID);
-		SendDelete th = new SendDelete(fileID,this.getChordManager());
+		SendIDelete th = new SendIDelete(fileID,this.getChordManager());
 		SingletonThreadPoolExecutor.getInstance().get().execute(th);
 		
 	}
