@@ -4,66 +4,17 @@ import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.sql.*;
 import java.util.ArrayList;
-
-import org.apache.derby.shared.common.error.DerbySQLIntegrityConstraintViolationException;
-
 import chord.PeerI;
 import communication.Leases;
 import util.Utils;
+import org.apache.derby.shared.common.error.DerbySQLIntegrityConstraintViolationException;
+
 
 public class DatabaseManager {
 
-	private static final String storeFile = "INSERT INTO FILESSTORED " + "(fileid, responsible, requestingpeer, desiredrepdeg) VALUES (?,?,?,?)";
-	
-	private static final String storePeer = "INSERT INTO PEERS " + "(peerid,ip,port) VALUES (?,?,?)";
-	
-	private static final String storeChunk = "INSERT INTO CHUNKSSTORED "	+ "(chunkid, fileid, currentrepdeg, size) VALUES (?,?,?,?)";
-	
-	private static final String requestBackup = "INSERT INTO BACKUPSREQUESTED "	+ "(fileid, filename, desiredrepdeg,encrypt_key,chunksNum) VALUES (?,?,?,?,?)";
-	
-	private static final String getFileById = "SELECT * FROM FILESSTORED " + "WHERE fileid = ?";
-	
-	private static final String updatePeer = "UPDATE PEERS " + "SET ip = ?, port = ? " + "WHERE peerid = ?";
-	
-	private static final String updateFile = "UPDATE FILESSTORED " + "SET lasttimestored = CURRENT_TIMESTAMP, responsible = ?, requestingpeer = ?, desiredrepdeg = ?" + "WHERE fileid = ?";
-	
-	private static final String setStoring = "UPDATE FILESSTORED " + "SET storing = ? WHERE fileid = ?";
-	
-	private static final String updateChunkRepDegree = "UPDATE CHUNKSSTORED "	+ "SET currentrepdeg = ? WHERE chunkid = ? AND fileid = ?";
-	
-	private static final String updateBackup = "UPDATE BACKUPSREQUESTED " + "SET desiredrepdeg = ? WHERE fileid = ?";
-	
-	private static final String updateResponsible = "UPDATE FILESSTORED " + "SET responsible = ? WHERE fileid = ?";
-	
-	private static final String checkChunkStored = "SELECT * FROM CHUNKSSTORED " + "WHERE fileid = ? AND chunkid = ?";
-	
-	private static final String getRequestingPeer = "SELECT peerid,ip,port FROM PEERS " + "JOIN (SELECT requestingpeer FROM FILESSTORED WHERE fileid = ?) AS F ON PEERS.peerid = F.requestingpeer";
-	
-	private static final String getBackup = "SELECT * FROM BACKUPSREQUESTED WHERE fileid = ?";
-	
-	private static final String getFileStored = "SELECT fileid, desiredrepdeg, storing FROM FILESSTORED WHERE fileid = ?";
-	
-	private static final String getFileChunks = "SELECT chunkid, fileid, size FROM CHUNKSSTORED WHERE fileid = ?";
-	
-	private static final String getCurrentRepDeg = "SELECT max(currentrepdeg) FROM CHUNKSSTORED WHERE fileid = ?";
-	
-	private static final String deleteFile = "DELETE FROM FILESSTORED WHERE fileid = ?";
-	
-	private static final String deleteBackupRequest = "DELETE FROM BACKUPSREQUESTED WHERE fileid = ?";
-	
-	private static final String getFilesDelete = "SELECT fileid FROM FILESSTORED WHERE { fn TIMESTAMPADD(SQL_TSI_SECOND,?,lasttimestored)} < ?";
-	
-	private static final String updateFileTime = "UPDATE FILESSTORED " + "SET lasttimestored = CURRENT_TIMESTAMP " + "WHERE fileid = ?";
-	
-	private static final String getFilesUpdate = "SELECT * FROM BACKUPSREQUESTED";
-	
-	private static final String getFiles = "SELECT * FROM FILESSTORED "	+ "WHERE responsible";
-	
-	private static final String getAllBackups = "SELECT fileid, filename, desiredrepdeg, encrypt_key, chunksNum FROM BACKUPSREQUESTED";
-
 	public static void storePeer(Connection c, PeerI peer) {
 		try {
-			PreparedStatement s = c.prepareStatement(storePeer);
+			PreparedStatement s = c.prepareStatement("INSERT INTO PEERS " + "(peerid,ip,port) VALUES (?,?,?)");
 			s.setString(1, peer.getId());
 			s.setString(2, peer.getAddress().getHostAddress());
 			s.setInt(3, peer.getPort());
@@ -80,7 +31,7 @@ public class DatabaseManager {
 	
 	private static void updatePeer(Connection c, PeerI peer) {
 		try {
-			PreparedStatement s = c.prepareStatement(updatePeer);
+			PreparedStatement s = c.prepareStatement("UPDATE PEERS " + "SET ip = ?, port = ? " + "WHERE peerid = ?");
 			s.setString(1, peer.getAddress().getHostAddress());
 			s.setInt(2, peer.getPort());
 			s.setString(3, peer.getId());
@@ -96,7 +47,7 @@ public class DatabaseManager {
 		String peer = file.getpeer();
 		Integer repdeg = file.getrepdegree();
 		try {
-			PreparedStatement s = c.prepareStatement(storeFile);
+			PreparedStatement s = c.prepareStatement("INSERT INTO FILESSTORED " + "(fileid, responsible, requestingpeer, desiredrepdeg) VALUES (?,?,?,?)");
 			s.setString(1, file.getfile());
 			s.setBoolean(2, file.getchunkstored());
 			if (peer != null) {
@@ -124,7 +75,7 @@ public class DatabaseManager {
 		String peerRequesting = file.getpeer();
 		Integer desiredRepDegree = file.getrepdegree();
 		try {
-			PreparedStatement s = c.prepareStatement(updateFile);
+			PreparedStatement s = c.prepareStatement("UPDATE FILESSTORED " + "SET lasttimestored = CURRENT_TIMESTAMP, responsible = ?, requestingpeer = ?, desiredrepdeg = ?" + "WHERE fileid = ?");
 			s.setBoolean(1, file.getchunkstored());
 			if (peerRequesting != null) {
 				s.setString(2, peerRequesting);
@@ -147,7 +98,7 @@ public class DatabaseManager {
 	
 	public static void setStoring(Connection c, String fileId, Boolean storing) {
 		try {
-			PreparedStatement s = c.prepareStatement(setStoring);
+			PreparedStatement s = c.prepareStatement("UPDATE FILESSTORED " + "SET storing = ? WHERE fileid = ?");
 			s.setBoolean(1, storing);
 			s.setString(2, fileId);
 			s.executeUpdate();
@@ -159,7 +110,7 @@ public class DatabaseManager {
 	
 	public static void storeChunk(Connection c, Chunk chunkInfo) {
 		try {
-			PreparedStatement s = c.prepareStatement(storeChunk);
+			PreparedStatement s = c.prepareStatement("INSERT INTO CHUNKSSTORED "	+ "(chunkid, fileid, currentrepdeg, size) VALUES (?,?,?,?)");
 			s.setInt(1, chunkInfo.getchunkid());
 			s.setString(2, chunkInfo.getfileid());
 			if (chunkInfo.getrepdegree() == null) {
@@ -180,7 +131,7 @@ public class DatabaseManager {
 	
 	public static void updateRepDeg(Connection c, Chunk chunkInfo) {
 		try {
-			PreparedStatement s = c.prepareStatement(updateChunkRepDegree);
+			PreparedStatement s = c.prepareStatement("UPDATE CHUNKSSTORED "	+ "SET currentrepdeg = ? WHERE chunkid = ? AND fileid = ?");
 			s.setInt(1, chunkInfo.getrepdegree());
 			s.setInt(2, chunkInfo.getchunkid());
 			s.setString(3, chunkInfo.getfileid());
@@ -194,7 +145,7 @@ public class DatabaseManager {
 	
 	private static void updateBackup(Connection c, Backup request) {
 		try {
-			PreparedStatement s = c.prepareStatement(updateBackup);
+			PreparedStatement s = c.prepareStatement("UPDATE BACKUPSREQUESTED " + "SET desiredrepdeg = ? WHERE fileid = ?");
 			s.setInt(1, request.getrepdegree());
 			s.setString(2, request.getid());
 			s.executeUpdate();
@@ -207,7 +158,7 @@ public class DatabaseManager {
 	
 	public static void updateResponsible(Connection c, String fileId, Boolean bool) {
 		try {
-			PreparedStatement s = c.prepareStatement(updateResponsible);
+			PreparedStatement s = c.prepareStatement("UPDATE FILESSTORED " + "SET responsible = ? WHERE fileid = ?");
 			s.setBoolean(1, bool);
 			s.setString(2, fileId);
 			s.executeUpdate();
@@ -224,7 +175,7 @@ public class DatabaseManager {
 		}
 		else {
 			try {
-				PreparedStatement s = c.prepareStatement(requestBackup);
+				PreparedStatement s = c.prepareStatement("INSERT INTO BACKUPSREQUESTED "	+ "(fileid, filename, desiredrepdeg,encrypt_key,chunksNum) VALUES (?,?,?,?,?)");
 				s.setString(1, backupRequest.getid());
 				s.setString(2, backupRequest.getname());
 				s.setInt(3, backupRequest.getrepdegree());
@@ -244,48 +195,30 @@ public class DatabaseManager {
 	}
 	
 	public static boolean checkResponsible(Connection c, String fileId) {
-		PreparedStatement s = null;
 		try {
-			s = c.prepareStatement(getFileById);
-			s.setString(1, fileId);
-			ResultSet result = s.executeQuery();
-			c.setAutoCommit(false);
+			Statement s = c.createStatement();
+			ResultSet set = s.executeQuery("SELECT * FROM FILESSTORED WHERE fileid = " + fileId);
 			c.commit();
-			if (result.next()) {
-				return result.getBoolean("responsible");
+			if (set.next()) {
+				return set.getBoolean("responsible");
 			}
 		} catch (SQLException e) {
 			e.printStackTrace();
-		} finally{
-			try {
-				s.close();
-			} catch (SQLException e) {
-				System.err.println(e.getMessage());
-			}
 		}
 		return false;
 	}
 	
-	public static boolean checkChunkStored(Connection c, Chunk chunkInfo) {
-		PreparedStatement s = null;
-		try {	
-			s = c.prepareStatement(checkChunkStored);
-			s.setString(1, chunkInfo.getfileid());
-			s.setInt(2, chunkInfo.getchunkid());
-			ResultSet r = s.executeQuery();
+	public static boolean checkChunkStored(Connection c, Chunk chunk) {
+		try {
+			Statement s = c.createStatement();
+			ResultSet set = s.executeQuery("SELECT * FROM CHUNKSSTORED WHERE fileid = " + chunk.getfileid() + " AND chunkid = " + chunk.getchunkid());
 			c.setAutoCommit(false);
-			if (r.next()) {
-				int size = r.getInt(5);
+			if (set.next()) {
+				int size = set.getInt(5);
 				return true && size >= 0;
 			}
 		} catch (SQLException e) {
 			e.printStackTrace();
-		} finally {
-			try {
-				s.close();
-			} catch (SQLException e) {
-				System.err.println(e.getMessage());
-			}
 		}
 		return false;
 	}
@@ -293,8 +226,8 @@ public class DatabaseManager {
 	public static ArrayList<Backup> getRequestedBackups(Connection c){
 		ArrayList<Backup> a = new ArrayList<Backup>();
 		try {
-			PreparedStatement s = c.prepareStatement(getAllBackups);
-			ResultSet set = s.executeQuery();
+			Statement s = c.createStatement();
+			ResultSet set = s.executeQuery("SELECT fileid, filename, desiredrepdeg, encrypt_key, chunksNum FROM BACKUPSREQUESTED");
 			while (set.next()) {
 				Backup currentBackupRequest = new Backup(set.getString(1),
 						set.getString(2),
@@ -311,9 +244,8 @@ public class DatabaseManager {
 	
 	public static PeerI getRequestingPeer(Connection c, String fileId) {
 		try {
-			PreparedStatement s = c.prepareStatement(getRequestingPeer);
-			s.setString(1, fileId);
-			ResultSet set = s.executeQuery();
+			Statement s = c.createStatement();
+			ResultSet set = s.executeQuery("SELECT peerid,ip,port FROM PEERS JOIN (SELECT requestingpeer FROM FILESSTORED WHERE fileid = " + fileId + ") AS F ON PEERS.peerid = F.requestingpeer");
 			if (set.next()) {
 				InetAddress a = null;
 				try {
@@ -331,12 +263,10 @@ public class DatabaseManager {
 	}
 	
 	private static boolean checkBackupRequested(Connection c, String fileId) {
-		PreparedStatement s;
 		try {
-			s = c.prepareStatement(getBackup);
-			s.setString(1, fileId);
-			ResultSet result =  s.executeQuery();
-			if (result.next()) {
+			Statement s = c.createStatement();
+			ResultSet set =  s.executeQuery("SELECT * FROM BACKUPSREQUESTED WHERE fileid = " + fileId);
+			if (set.next()) {
 				return true;
 			}
 		} catch (SQLException e) {
@@ -346,11 +276,9 @@ public class DatabaseManager {
 	}
 	
 	public static Backup getBackup(Connection c, String fileId) {
-		PreparedStatement s;
 		try {
-			s = c.prepareStatement(getBackup);
-			s.setString(1, fileId);
-			ResultSet set =  s.executeQuery();
+			Statement s = c.createStatement();
+			ResultSet set =  s.executeQuery("SELECT * FROM BACKUPSREQUESTED WHERE fileid = " + fileId);
 			if (set.next()) {
 				return new Backup(set.getString("fileid"),
 						set.getString("filename"),
@@ -365,11 +293,9 @@ public class DatabaseManager {
 	}
 	
 	public static int getRepDegree(Connection c, String fileId) {
-		PreparedStatement s;
 		try {
-			s = c.prepareStatement(getFileStored);
-			s.setString(1, fileId);
-			ResultSet set =  s.executeQuery();
+			Statement s = c.createStatement();
+			ResultSet set =  s.executeQuery("SELECT fileid, desiredrepdeg, storing FROM FILESSTORED WHERE fileid = " + fileId);
 			if (set.next()) {
 				return set.getInt(2);
 			}
@@ -380,13 +306,11 @@ public class DatabaseManager {
 	}
 	
 	public static int getMaxRepDegree(Connection c, String fileId) {
-		PreparedStatement s;
 		try {
-			s = c.prepareStatement(getCurrentRepDeg);
-			s.setString(1, fileId);
-			ResultSet result =  s.executeQuery();
-			if (result.next()) {
-				return result.getInt(1);
+			Statement s = c.createStatement();
+			ResultSet set =  s.executeQuery("SELECT max(currentrepdeg) FROM CHUNKSSTORED WHERE fileid = " + fileId);
+			if (set.next()) {
+				return set.getInt(1);
 			}
 		} catch (SQLException e) {
 			System.err.println(e.getMessage());
@@ -395,11 +319,9 @@ public class DatabaseManager {
 	}
 	
 	public static boolean checkFile(Connection c, String fileId) {
-		PreparedStatement s;
 		try {
-			s = c.prepareStatement(getFileStored);
-			s.setString(1, fileId);
-			ResultSet set =  s.executeQuery();
+			Statement s = c.createStatement();
+			ResultSet set =  s.executeQuery("SELECT fileid, desiredrepdeg, storing FROM FILESSTORED WHERE fileid = " + fileId);
 			return set.next() && set.getBoolean(3);
 		} catch (SQLException e) {
 			System.err.println(e.getMessage());
@@ -408,14 +330,12 @@ public class DatabaseManager {
 	}
 	
 	public static ArrayList<Chunk> getFileChunks(Connection c, String fileId) {
-		PreparedStatement s;
 		ArrayList<Chunk> chunks = new ArrayList<Chunk>();
 		try {
-			s = c.prepareStatement(getFileChunks);
-			s.setString(1, fileId);
-			ResultSet result =  s.executeQuery();
-			while (result.next()) {
-				chunks.add(new Chunk(result.getInt(1), result.getString(2), result.getInt(3)));
+			Statement s = c.createStatement();
+			ResultSet set =  s.executeQuery("SELECT chunkid, fileid, size FROM CHUNKSSTORED WHERE fileid = " + fileId);
+			while (set.next()) {
+				chunks.add(new Chunk(set.getInt(1), set.getString(2), set.getInt(3)));
 			}
 		} catch (SQLException e) {
 			System.err.println(e.getMessage());
@@ -425,7 +345,7 @@ public class DatabaseManager {
 	
 	public static void deleteFile(Connection c, String fileId) {
 		try {
-			PreparedStatement s = c.prepareStatement(deleteFile);
+			PreparedStatement s = c.prepareStatement("DELETE FROM FILESSTORED WHERE fileid = ?");
 			s.setString(1, fileId);
 			s.executeUpdate();
 		} catch (SQLException e) {
@@ -435,7 +355,7 @@ public class DatabaseManager {
 	
 	public static void deleteBackupRequest(Connection c, String fileId) {
 		try {
-			PreparedStatement s = c.prepareStatement(deleteBackupRequest);
+			PreparedStatement s = c.prepareStatement("DELETE FROM BACKUPSREQUESTED WHERE fileid = ?");
 			s.setString(1, fileId);
 			s.executeUpdate();
 		} catch (SQLException e) {
@@ -447,7 +367,7 @@ public class DatabaseManager {
 		ArrayList<String> files = new ArrayList<String>();
 		PreparedStatement s;
 		try {
-			s = c.prepareStatement(getFilesDelete);
+			s = c.prepareStatement("SELECT fileid FROM FILESSTORED WHERE { fn TIMESTAMPADD(SQL_TSI_SECOND,?,lasttimestored)} < ?");
 			s.setInt(1, Leases.LEASE_TIME);
 			s.setTimestamp(2, t);
 			ResultSet set = s.executeQuery();
@@ -463,7 +383,7 @@ public class DatabaseManager {
 	
 	public static void updateFileTime(Connection c, String fileId) {
 		try {
-			PreparedStatement s = c.prepareStatement(updateFileTime);
+			PreparedStatement s = c.prepareStatement("UPDATE FILESSTORED " + "SET lasttimestored = CURRENT_TIMESTAMP " + "WHERE fileid = ?");
 			s.setString(1, fileId);
 			s.executeUpdate();
 			c.commit();
@@ -474,18 +394,11 @@ public class DatabaseManager {
 	
 	public static ArrayList<Backup> getFilesUpdate(Connection c) {
 		ArrayList<Backup> files = new ArrayList<Backup>();
-		PreparedStatement s;
 		try {
-			s = c.prepareStatement(getFilesUpdate);
-			ResultSet result = s.executeQuery();
-			while (result.next()) {
-				files.add(new Backup(
-						result.getString("fileid"),
-						result.getString("filename"),
-						result.getString("encrypt_key"),
-						result.getInt("desiredrepdeg"),
-						result.getInt("chunksNum")
-						));
+			Statement s = c.createStatement();
+			ResultSet set = s.executeQuery("SELECT * FROM BACKUPSREQUESTED");
+			while (set.next()) {
+				files.add(new Backup(set.getString("fileid"), set.getString("filename"), set.getString("encrypt_key"), set.getInt("desiredrepdeg"), set.getInt("chunksNum")));
 			}
 		} catch (SQLException e) {
 			System.err.println(e.getMessage());
@@ -495,14 +408,13 @@ public class DatabaseManager {
 	
 	public static ArrayList<Stored> getFiles(Connection c) {
 		ArrayList<Stored> files = new ArrayList<Stored>();
-		PreparedStatement s;
 		try {
-			s = c.prepareStatement(getFiles);
-			ResultSet result = s.executeQuery();
-			while (result.next()) {
+			Statement s = c.createStatement();
+			ResultSet set = s.executeQuery("SELECT * FROM FILESSTORED "	+ "WHERE responsible");
+			while (set.next()) {
 				files.add(new Stored(
-						result.getString("fileid"), 
-						true, result.getInt("desiredrepdeg")));
+						set.getString("fileid"), 
+						true, set.getInt("desiredrepdeg")));
 			}
 		} catch (SQLException e) {
 			System.err.println(e.getMessage());
