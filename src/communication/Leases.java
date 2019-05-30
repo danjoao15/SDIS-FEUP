@@ -6,7 +6,7 @@ import java.util.concurrent.TimeUnit;
 
 import database.Backup;
 import database.Chunk;
-import database.DBUtils;
+import database.DatabaseManager;
 import util.Utils;
 
 public class Leases implements Runnable {
@@ -32,7 +32,7 @@ public class Leases implements Runnable {
 	}
 
 	private void updateFiles(Timestamp time) {
-		ArrayList<Backup> filesToUpdate = DBUtils.getFilesToUpdate(peer.getConnection());
+		ArrayList<Backup> filesToUpdate = DatabaseManager.getFilesUpdate(peer.getConnection());
 		
 		for(int i = 0; i < filesToUpdate.size(); i++) {
 			
@@ -45,17 +45,17 @@ public class Leases implements Runnable {
 	}
 
 	private void deleteFiles(Timestamp time) {
-		ArrayList<String> filesToDelete = DBUtils.getFilesToDelete(peer.getConnection(), time);
+		ArrayList<String> filesToDelete = DatabaseManager.getFilesDelete(peer.getConnection(), time);
 		if (filesToDelete.size() > 0) {
 			System.out.println("Leases: Found " + filesToDelete.size() + " to delete");
 		}
 		for(int i = 0; i < filesToDelete.size(); i++) {
-			ArrayList<Chunk> allChunks = DBUtils.getAllChunksOfFile(peer.getConnection(), filesToDelete.get(i));
+			ArrayList<Chunk> allChunks = DatabaseManager.getFileChunks(peer.getConnection(), filesToDelete.get(i));
 			allChunks.forEach(chunk -> {
 				Utils.delete(PeerMain.getPath().resolve(chunk.getfile()));
 				PeerMain.decreaseStorageUsed(chunk.getsize());
 			});
-			DBUtils.delete(peer.getConnection(), filesToDelete.get(i));
+			DatabaseManager.deleteFile(peer.getConnection(), filesToDelete.get(i));
 			Utils.LOG.info("Lease:Deleted file: " + filesToDelete.get(i));
 		}
 	}

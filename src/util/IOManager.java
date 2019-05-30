@@ -8,7 +8,7 @@ import java.util.Scanner;
 
 import communication.PeerMain;
 import database.Backup;
-import database.DBUtils;
+import database.DatabaseManager;
 
 public class IOManager{
 
@@ -62,7 +62,7 @@ public class IOManager{
 	}
 	
 	private static void restoreOption(Scanner scanner, PeerMain peer) {
-		ArrayList<Backup> allRequests = DBUtils.getBackupsRequested(peer.getConnection());
+		ArrayList<Backup> allRequests = DatabaseManager.getRequestedBackups(peer.getConnection());
 		if (allRequests.size() > 0) {
 			int option = -1;
 			do {
@@ -84,7 +84,7 @@ public class IOManager{
 	}
 	
 	private static void deleteOption(Scanner scanner, PeerMain peer) {
-		ArrayList<Backup> allRequests = DBUtils.getBackupsRequested(peer.getConnection());
+		ArrayList<Backup> allRequests = DatabaseManager.getRequestedBackups(peer.getConnection());
 		if (allRequests.size() > 0) {
 			int option = -1;
 			do {

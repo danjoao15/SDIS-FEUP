@@ -17,7 +17,7 @@ import java.util.Arrays;
 import chord.AbstractPeer;
 import chord.ManageChord;
 import database.Backup;
-import database.DBUtils;
+import database.DatabaseManager;
 import database.Database;
 import database.Stored;
 import protocols.SendGetChunk;
@@ -169,7 +169,7 @@ public class PeerMain {
 		}
 		encryptKey = new String(c.getKey(), StandardCharsets.ISO_8859_1);
 		Backup backupRequest = new Backup(fileID,filename,encryptKey, degree, n);
-		DBUtils.insertBackupRequested(database.getConnection(), backupRequest);
+		DatabaseManager.requestBackup(database.getConnection(), backupRequest);
 		int chunkNo = 0;
 		while(file.length > (chunkNo + 1)*LENGTH_OF_CHUNK) {
 			byte[] body = Arrays.copyOfRange(file, chunkNo * LENGTH_OF_CHUNK, (chunkNo + 1) *LENGTH_OF_CHUNK);
@@ -185,7 +185,7 @@ public class PeerMain {
 	}
 
 	public void delete(String fileID) {
-		DBUtils.deleteFileFromBackupsRequested(getConnection(), fileID);
+		DatabaseManager.deleteBackupRequest(getConnection(), fileID);
 		SendDelete th = new SendDelete(fileID,this.getChordManager());
 		SingletonThreadPoolExecutor.getInstance().get().execute(th);
 		
@@ -204,14 +204,14 @@ public class PeerMain {
 	}
 	
 	public void sendResponsability() {
-		ArrayList<Stored> filesIAmResponsible = DBUtils.getFilesIAmResponsible(this.database.getConnection());
+		ArrayList<Stored> filesIAmResponsible = DatabaseManager.getFiles(this.database.getConnection());
 		ArrayList<Stored> toSend = new ArrayList<Stored> ();
 		AbstractPeer predecessor = this.chordManager.getPredecessor();
 		if (predecessor.isNull()) return;
 		if (predecessor.getId().equals(this.chordManager.getPeerInfo().getId())) return;
 		for(int i = 0; i < filesIAmResponsible.size(); i++) {
 			if(Utils.inTheMiddle(this.chordManager.getPeerInfo().getId(), predecessor.getId(), filesIAmResponsible.get(i).getfile())) {
-				DBUtils.updateResponsible(this.database.getConnection(),filesIAmResponsible.get(i).getfile(), false);
+				DatabaseManager.updateResponsible(this.database.getConnection(),filesIAmResponsible.get(i).getfile(), false);
 				toSend.add(filesIAmResponsible.get(i));
 			}
 		}

@@ -24,7 +24,7 @@ import chord.ManageChord;
 import chord.PeerI;
 import database.Backup;
 import database.Chunk;
-import database.DBUtils;
+import database.DatabaseManager;
 import database.Stored;
 import util.Confidential;
 import util.Utils;
@@ -143,7 +143,7 @@ public class ParseMessageAndSendResponse implements Runnable {
 			int degree = Integer.valueOf(currentLine[1]);
 			Stored fileInfo = new Stored(fileID, true);
 			fileInfo.setrepdegree(degree);
-			DBUtils.insertStoredFile(dbConnection, fileInfo);
+			DatabaseManager.storeFile(dbConnection, fileInfo);
 		}
 		return null;
 	}
@@ -177,7 +177,7 @@ public class ParseMessageAndSendResponse implements Runnable {
 		String file_id = secondLine[0].trim();
 		int chunkNo = Integer.parseInt(secondLine[1]);
 
-		Backup b = DBUtils.getBackupRequested(dbConnection, file_id);
+		Backup b = DatabaseManager.getBackup(dbConnection, file_id);
 
 		
 		Confidential conf = new Confidential(b.getkey());
@@ -235,7 +235,7 @@ public class ParseMessageAndSendResponse implements Runnable {
 		Integer chunkNo = Integer.valueOf(secondLine[3]);
 
 		Chunk chunkInfo = new Chunk(chunkNo, fileID);
-		if(DBUtils.checkStoredChunk(dbConnection, chunkInfo )) {
+		if(DatabaseManager.checkChunkStored(dbConnection, chunkInfo )) {
 			String body = Utils.read(PeerMain.getPath().resolve(chunkInfo.getfile()).toString());
 			String message = MsgFactory.getChunk(this.myPeerID, fileID, chunkNo, body.getBytes(StandardCharsets.ISO_8859_1));
 			Client.sendMessage(addr, port, message, false);
@@ -250,14 +250,14 @@ public class ParseMessageAndSendResponse implements Runnable {
 
 	private void delete(String fileToDelete, int repDegree) {
 		System.out.println("Received Delete for file: " + fileToDelete + ". Rep Degree: " + repDegree);
-		boolean isFileStored = DBUtils.isFileStored(dbConnection, fileToDelete);
+		boolean isFileStored = DatabaseManager.checkFile(dbConnection, fileToDelete);
 		if (isFileStored) {
-			ArrayList<Chunk> allChunks = DBUtils.getAllChunksOfFile(dbConnection, fileToDelete);
+			ArrayList<Chunk> allChunks = DatabaseManager.getFileChunks(dbConnection, fileToDelete);
 			allChunks.forEach(chunk -> {
 				Utils.delete(PeerMain.getPath().resolve(chunk.getfile()));
 				PeerMain.decreaseStorageUsed(chunk.getsize());
 			});
-			DBUtils.delete(dbConnection, fileToDelete);
+			DatabaseManager.deleteFile(dbConnection, fileToDelete);
 			repDegree--;
 			Utils.LOG.info("Deleted file: " + fileToDelete);
 		}
@@ -275,13 +275,13 @@ public class ParseMessageAndSendResponse implements Runnable {
 	private void parseDelete(String [] secondLine) {
 		String fileToDelete = secondLine[0].trim();
 		int repDegree = Integer.parseInt(secondLine[1]);
-		if (DBUtils.amIResponsible(dbConnection, fileToDelete)) return;
+		if (DatabaseManager.checkResponsible(dbConnection, fileToDelete)) return;
 		delete(fileToDelete,repDegree);
 	}
 	private void parseInitDelete(String[] firstLine, String[] secondLine) {
 		
 		String fileToDelete = secondLine[0];
-		int repDegree = DBUtils.getMaxRepDegree(dbConnection, fileToDelete);
+		int repDegree = DatabaseManager.getMaxRepDegree(dbConnection, fileToDelete);
 		delete(fileToDelete,repDegree);
 	}
 
@@ -292,21 +292,21 @@ public class ParseMessageAndSendResponse implements Runnable {
 		Integer chunkNo = Integer.valueOf(lines[1]);
 		Integer repDegree = Integer.valueOf(lines[2]);
 		
-		boolean iAmResponsible = DBUtils.amIResponsible(dbConnection, fileID);
+		boolean iAmResponsible = DatabaseManager.checkResponsible(dbConnection, fileID);
 		Chunk chunkInfo = new Chunk(chunkNo,fileID);
-		boolean chunkExists = DBUtils.checkStoredChunk(dbConnection, chunkInfo);
+		boolean chunkExists = DatabaseManager.checkChunkStored(dbConnection, chunkInfo);
 		
 		if(iAmResponsible) {
 			
-			PeerI peerWhichRequested = DBUtils.getPeerWhichRequestedBackup(dbConnection, fileID);
+			PeerI peerWhichRequested = DatabaseManager.getRequestingPeer(dbConnection, fileID);
 			if(chunkExists) {
 				repDegree++;
 				chunkInfo.setrepdegree(repDegree);
-				DBUtils.updateStoredChunkRepDegree(dbConnection, chunkInfo);
+				DatabaseManager.updateRepDeg(dbConnection, chunkInfo);
 			} else {
 				chunkInfo.setrepdegree(repDegree);
 				chunkInfo.setsize(-1);
-				DBUtils.insertStoredChunk(dbConnection, chunkInfo);
+				DatabaseManager.storeChunk(dbConnection, chunkInfo);
 			}
 			
 			if(peerWhichRequested != null) {
@@ -350,15 +350,15 @@ public class ParseMessageAndSendResponse implements Runnable {
 		Path filePath = PeerMain.getPath().resolve(fileID + "_" + chunkNo);
 
 		PeerI peerThatRequestedBackup = new PeerI(id,addr,port);
-		DBUtils.insertPeer(dbConnection, peerThatRequestedBackup);
+		DatabaseManager.storePeer(dbConnection, peerThatRequestedBackup);
 		Stored fileInfo = new Stored(fileID, true);
 		fileInfo.setpeer(peerThatRequestedBackup.getId());
 		fileInfo.setrepdegree(replicationDegree);
-		DBUtils.insertStoredFile(dbConnection, fileInfo);
+		DatabaseManager.storeFile(dbConnection, fileInfo);
 		
 
 		if(id.equals(myPeerID)) {
-			DBUtils.setIamStoring(dbConnection, fileInfo.getfile(), false);
+			DatabaseManager.setStoring(dbConnection, fileInfo.getfile(), false);
 			PeerI nextPeer = chordManager.getSuccessor(0);
 			String message = MsgFactory.getKeepChunk(id, addr, port, fileID, chunkNo, replicationDegree, body_bytes);
 			Client.sendMessage(nextPeer.getAddr(),nextPeer.getPort(), message, false);
@@ -369,7 +369,7 @@ public class ParseMessageAndSendResponse implements Runnable {
 			Utils.LOG.info("Writing/Saving chunk");
 			try {
 				Utils.write(filePath, body_bytes);
-				DBUtils.insertStoredChunk(dbConnection, new Chunk(chunkNo,fileID, body_bytes.length));
+				DatabaseManager.storeChunk(dbConnection, new Chunk(chunkNo,fileID, body_bytes.length));
 				
 			} catch (IOException e) {
 				e.printStackTrace();
@@ -408,7 +408,7 @@ public class ParseMessageAndSendResponse implements Runnable {
 		int replicationDegree = Integer.parseInt(header[5]);
 
 		Path filePath = PeerMain.getPath().resolve(fileID + "_" + chunkNo);
-		if(DBUtils.amIResponsible(dbConnection, fileID)) {
+		if(DatabaseManager.checkResponsible(dbConnection, fileID)) {
 			Utils.LOG.info("KeepChunk: I am responsible ");
 			PeerI predecessor = (PeerI) chordManager.getPredecessor();
 			String message = MsgFactory.getStored(myPeerID, fileID, chunkNo, 0);
@@ -425,8 +425,8 @@ public class ParseMessageAndSendResponse implements Runnable {
 		}
 
 		if(!PeerMain.capacityExceeded(body_bytes.length)) {
-			DBUtils.insertStoredFile(dbConnection, new Stored(fileID, false));
-			DBUtils.insertStoredChunk(dbConnection, new Chunk(chunkNo,fileID, body_bytes.length));
+			DatabaseManager.storeFile(dbConnection, new Stored(fileID, false));
+			DatabaseManager.storeChunk(dbConnection, new Chunk(chunkNo,fileID, body_bytes.length));
 			try {
 				Utils.write(filePath, body_bytes);
 			} catch (IOException e) {
