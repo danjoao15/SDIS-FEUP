@@ -1,7 +1,7 @@
 package chord;
 
 import communication.Client;
-import communication.MsgFactory;
+import communication.CreateMsg;
 import communication.MsgType;
 import util.Utils;
 
@@ -31,10 +31,10 @@ public class Stabilize implements Runnable {
 			String myPeerId = this.chordManager.getPeerInfo().getId();
 			Utils.LOG.finest("Running Stabilize\n");
 			PeerI nextPeer = this.chordManager.getNextPeer();
-			String stabilizeMessage = MsgFactory.getHeader(MsgType.STABILIZE, "1.0", myPeerId);
-			String response = Client.sendMessage(nextPeer.getAddr(), nextPeer.getPort(), stabilizeMessage, true);
+			String stabilizeMessage = CreateMsg.getHeader(MsgType.STABILIZE, "1.0", myPeerId);
+			String response = Client.sendMsg(nextPeer.getAddress(), nextPeer.getPort(), stabilizeMessage, true);
 			if(response == null) {
-				Utils.LOG.warning("Next peer dropped");
+				Utils.LOG.warning("Next peer created");
 				this.chordManager.popNextPeer();
 				return;
 			}
@@ -48,8 +48,8 @@ public class Stabilize implements Runnable {
 			AbstractPeer predecessor = chordManager.getPredecessor();
 			if (predecessor.isNull()) return;
 			if(myPeerId.equals(predecessor.getId())) return;
-			String successorsMsg = MsgFactory.getSuccessors(myPeerId, chordManager.getNextPeers());
-			Client.sendMessage(predecessor.getAddr(), predecessor.getPort(), successorsMsg, false);
+			String successorsMsg = CreateMsg.getSuccessors(myPeerId, chordManager.getNextPeers());
+			Client.sendMsg(predecessor.getAddress(), predecessor.getPort(), successorsMsg, false);
 			
 		} catch(Exception e) {
 			e.printStackTrace();

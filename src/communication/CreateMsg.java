@@ -9,7 +9,7 @@ import java.util.List;
 import chord.PeerI;
 import database.Stored;
 
-public class MsgFactory {
+public class CreateMsg {
 
 	private static String ENDHEADER = "\r\n\r\n";
 	private static String NEWLINE = "\r\n";
@@ -40,13 +40,13 @@ public class MsgFactory {
 	}
 	
 	public static String getNotify(String senderId,Integer senderListeningPort) {
-		String message = MsgFactory.getFirstLine(MsgType.NOTIFY, "1.0", senderId);
-		return MsgFactory.appendLine(message, new String[] {"" + senderListeningPort});
+		String message = CreateMsg.getFirstLine(MsgType.NOTIFY, "1.0", senderId);
+		return CreateMsg.appendLine(message, new String[] {"" + senderListeningPort});
 	}
 	
 	public static String getSuccessor(String senderId, PeerI peer) {
 		String msg = getFirstLine(MsgType.SUCCESSOR,"1.0",senderId);
-		return appendLine(msg, new Object[] {peer.getId(),peer.getAddr().getHostAddress(),peer.getPort()});
+		return appendLine(msg, new Object[] {peer.getId(),peer.getAddress().getHostAddress(),peer.getPort()});
 	}
 	public static String getResponsible(String string, ArrayList<Stored> toSend) {
 		String msg = getFirstLine(MsgType.RESPONSIBLE,"1.0",string);
@@ -62,24 +62,24 @@ public class MsgFactory {
 		for (int i = 0; i < list.size(); i++) {
 			PeerI nextPeer = list.get(i);
 			objectArray[i*3] = nextPeer.getId();
-			objectArray[i*3 + 1] = nextPeer.getAddr().getHostAddress();
+			objectArray[i*3 + 1] = nextPeer.getAddress().getHostAddress();
 			objectArray[i*3 + 2] = nextPeer.getPort();
 		}
 		return appendLine(msg, objectArray);
 	}
 	
-	public static String getPredecessor(String senderId, PeerI peer) {
-		String msg = getFirstLine(MsgType.PREDECESSOR,"1.0",senderId);
-		return appendLine(msg, new Object[] {peer.getId(),peer.getAddr().getHostAddress(),peer.getPort()});
+	public static String getPredecessor(String IDsender, PeerI peer) {
+		String msg = getFirstLine(MsgType.PREDECESSOR,"1.0",IDsender);
+		return appendLine(msg, new Object[] {peer.getId(),peer.getAddress().getHostAddress(),peer.getPort()});
 	}
-	public static String getAsk(String senderId, PeerI peer) {
-		String msg = getFirstLine(MsgType.ASK,"1.0",senderId);
-		return appendLine(msg, new Object[] {peer.getId(),peer.getAddr().getHostAddress(),peer.getPort()});
+	public static String getAsk(String IDsender, PeerI peer) {
+		String msg = getFirstLine(MsgType.ASK,"1.0",IDsender);
+		return appendLine(msg, new Object[] {peer.getId(),peer.getAddress().getHostAddress(),peer.getPort()});
 	}
-	public static String getPutChunk(String id, InetAddress addr, int port, String fileID, int chunkNo, int replicationDeg, byte[] body) {
+	public static String getPutChunk(String id, InetAddress address, int port, String IDfile, int nChunk, int repDeg, byte[] body) {
 		String msg = getFirstLine(MsgType.PUTCHUNK,"1.0",id);
-		String msg2 = appendLine(msg, new Object[] {id, addr.getHostAddress(), port, fileID, chunkNo,
-				replicationDeg});
+		String msg2 = appendLine(msg, new Object[] {id, address.getHostAddress(), port, IDfile, nChunk,
+				repDeg});
 		try {
 			return appendBody(msg2, body);
 		} catch (UnsupportedEncodingException e) {
@@ -88,9 +88,9 @@ public class MsgFactory {
 			return null;
 		}
 	}
-	public static String getKeepChunk(String senderId, InetAddress addr, int port, String fileID, int chunkNo, int replicationDeg, byte[] body) {
-		String msg = getFirstLine(MsgType.KEEPCHUNK,"1.0",senderId);
-		String msg2 = appendLine(msg, new Object[] {senderId, addr.getHostAddress(), port, fileID, chunkNo, replicationDeg});
+	public static String getKeepChunk(String IDsender, InetAddress address, int port, String IDfile, int nChunk, int repDeg, byte[] body) {
+		String msg = getFirstLine(MsgType.KEEPCHUNK,"1.0",IDsender);
+		String msg2 = appendLine(msg, new Object[] {IDsender, address.getHostAddress(), port, IDfile, nChunk, repDeg});
 		try {
 			return appendBody(msg2, body);
 		} catch (UnsupportedEncodingException e) {
@@ -98,24 +98,24 @@ public class MsgFactory {
 			return null;
 		}
 	}
-	public static String getStored(String senderId, String fileID, int chunkNo, int replicationDeg) {
-		String msg = getFirstLine(MsgType.STORED,"1.0",senderId);
-		String msg2 = appendLine(msg, new Object[] {fileID, chunkNo, replicationDeg});
+	public static String getStored(String IDsender, String IDfile, int nChunk, int repDeg) {
+		String msg = getFirstLine(MsgType.STORED,"1.0",IDsender);
+		String msg2 = appendLine(msg, new Object[] {IDfile, nChunk, repDeg});
 		return msg2;
 	}
-	public static String getConfirmStored(String senderId, String fileID, int chunkNo, int replicationDeg) {
-		String msg = getFirstLine(MsgType.CONFIRMSTORED,"1.0",senderId);
-		String msg2 = appendLine(msg, new Object[] {fileID, chunkNo, replicationDeg});
+	public static String getConfirmStored(String IDsender, String IDfile, int nChunk, int repDeg) {
+		String msg = getFirstLine(MsgType.CONFIRMSTORED,"1.0",IDsender);
+		String msg2 = appendLine(msg, new Object[] {IDfile, nChunk, repDeg});
 		return msg2;
 	}
-	public static String getGetChunk(String senderId, InetAddress addr, int port, String fileID, int chunkNo) {
-		String msg = getFirstLine(MsgType.GETCHUNK,"1.0",senderId);
-		String msg2 = appendLine(msg, new Object[] {addr.getHostAddress(), port, fileID, chunkNo});
+	public static String getGetChunk(String IDsender, InetAddress address, int port, String IDfile, int nChunk) {
+		String msg = getFirstLine(MsgType.GETCHUNK,"1.0",IDsender);
+		String msg2 = appendLine(msg, new Object[] {address.getHostAddress(), port, IDfile, nChunk});
 		return msg2;
 	}
-	public static String getChunk(String senderId, String fileID, int chunkNo, byte[] body) {
-		String msg = getFirstLine(MsgType.CHUNK,"1.0",senderId);
-		String msg2 = appendLine(msg, new Object[] {fileID, chunkNo});
+	public static String getChunk(String IDsender, String fileID, int nChunk, byte[] body) {
+		String msg = getFirstLine(MsgType.CHUNK,"1.0",IDsender);
+		String msg2 = appendLine(msg, new Object[] {fileID, nChunk});
 		try {
 			return appendBody(msg2, body);
 		} catch (UnsupportedEncodingException e) {

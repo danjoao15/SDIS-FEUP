@@ -3,27 +3,27 @@ package protocols;
 import chord.ManageChord;
 import chord.PeerI;
 import communication.Client;
-import communication.MsgFactory;
+import communication.CreateMsg;
 import database.Backup;
 
 public class SendGetChunk implements Runnable {
 
 	Backup request;
-	int nchunk;
+	int nChunk;
 	ManageChord chord;
 
-	public SendGetChunk(Backup backupRequest, int chunkNo, ManageChord chord) {
+	public SendGetChunk(Backup backupRequest, int nChunk, ManageChord chord) {
 		super();
 		this.request = backupRequest;
-		this.nchunk = chunkNo;
+		this.nChunk = nChunk;
 		this.chord = chord;
 	}
 
 	@Override
 	public void run() {
 		PeerI owner = chord.getChunkOwner(request.getname());
-		String getChunkMessage = MsgFactory.getGetChunk(chord.getPeerInfo().getId(), chord.getPeerInfo().getAddr(),chord.getPeerInfo().getPort(), this.request.getname(), this.nchunk);
-		Client.sendMessage(owner.getAddr(), owner.getPort(), getChunkMessage, false);
+		String getChunkMessage = CreateMsg.getGetChunk(chord.getPeerInfo().getId(), chord.getPeerInfo().getAddress(),chord.getPeerInfo().getPort(), this.request.getname(), this.nChunk);
+		Client.sendMsg(owner.getAddress(), owner.getPort(), getChunkMessage, false);
 	}
 
 }

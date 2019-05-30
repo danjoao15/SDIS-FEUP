@@ -4,9 +4,9 @@ import java.net.InetAddress;
 import java.net.UnknownHostException;
 public class PeerI extends AbstractPeer {
 
-	public PeerI(String id, InetAddress addr, Integer port) {
+	public PeerI(String id, InetAddress address, Integer port) {
 		this.id = id;
-		this.addr = addr;
+		this.address = address;
 		this.port = port;
 	}
 
@@ -18,7 +18,7 @@ public class PeerI extends AbstractPeer {
 		this.id = attr[0];
 
 		try {
-			this.addr = InetAddress.getByName(attr[1]);
+			this.address = InetAddress.getByName(attr[1]);
 		} catch (UnknownHostException e) {
 			e.printStackTrace();
 			return;
@@ -27,17 +27,17 @@ public class PeerI extends AbstractPeer {
 		
 	}
 
-	public InetAddress getAddr() {
-		return addr;
+	public InetAddress getAddress() {
+		return address;
 	}
 
 	@Override
 	public String[] asArray() {
-		return new String[]{id,addr.getHostAddress(),port.toString()}; 
+		return new String[]{id,address.getHostAddress(),port.toString()}; 
 	}
 
-	public void setAddr(InetAddress addr) {
-		this.addr = addr;
+	public void setAddress(InetAddress address) {
+		this.address = address;
 	}
 
 	public Integer getPort() {

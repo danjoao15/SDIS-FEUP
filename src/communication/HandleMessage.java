@@ -51,7 +51,7 @@ public class HandleMessage implements Runnable {
 	public void run() {
 		String response = parseMessage(readData);
 		if (response != null) {
-			sendResponse(socket, response);
+			sendRespo(socket, response);
 		}
 
 	}
@@ -81,7 +81,7 @@ public class HandleMessage implements Runnable {
 			parseDelete(secondLine);
 			break;
 		case INITDELETE:
-			parseInitDelete(firstLine, secondLine);
+			parseIDelete(firstLine, secondLine);
 			break;
 		case LOOKUP:
 			if (secondLine != null) {
@@ -91,29 +91,29 @@ public class HandleMessage implements Runnable {
 			}
 			break;
 		case PING:
-			response = MsgFactory.getHeader(MsgType.OK, "1.0", myPeerID);
+			response = CreateMsg.getHeader(MsgType.OK, "1.0", myPeerID);
 			break;
 		case NOTIFY:
-			parseNotifyMsg(firstLine,secondLine);
-			response = MsgFactory.getHeader(MsgType.OK, "1.0", myPeerID);
+			parseNotify(firstLine,secondLine);
+			response = CreateMsg.getHeader(MsgType.OK, "1.0", myPeerID);
 			break;
 		case PUTCHUNK:
-			parsePutChunkMsg(secondLine, thirdLine);
+			parsePutChunk(secondLine, thirdLine);
 			break;
 		case KEEPCHUNK:
-			parseKeepChunkMsg(secondLine, thirdLine);
+			parseKeepChunk(secondLine, thirdLine);
 			break;
 		case STABILIZE:
 			response = parseStabilize(firstLine);
 			break;
 		case STORED:
-			response = parseStoredMsg(secondLine);
+			response = parseStored(secondLine);
 			break;
 		case GETCHUNK: 
-			response = parseGetChunkMsg(secondLine);
+			response = parseGetChunk(secondLine);
 			break;
 		case CHUNK:
-			response = parseChunkMsg(secondLine,thirdLine);
+			response = parseChunk(secondLine,thirdLine);
 			break;
 		case RESPONSIBLE:
 			response = parseResponsible(secondLine);
@@ -131,7 +131,7 @@ public class HandleMessage implements Runnable {
 		String fileId = secondLine[0];
 		Integer chunkNo = Integer.parseInt(secondLine[1]);
 		Integer repDegree = Integer.parseInt(secondLine[2]);
-		Utils.LOG.info("Chunk " + fileId + "_" + chunkNo + ", saved with rep degree=" + repDegree);
+		Utils.LOG.info("Chunk " + fileId + "_" + chunkNo + ", saved with replication degree=" + repDegree);
 		
 	}
 
@@ -166,11 +166,11 @@ public class HandleMessage implements Runnable {
 	}
 
 	private String parseStabilize(String[] firstLine) {
-		String response = MsgFactory.getFirstLine(MsgType.PREDECESSOR, "1.0", myPeerID);
-		return MsgFactory.appendLine(response, peer.getChordManager().getPredecessor().asArray());
+		String response = CreateMsg.getFirstLine(MsgType.PREDECESSOR, "1.0", myPeerID);
+		return CreateMsg.appendLine(response, peer.getChordManager().getPredecessor().asArray());
 	}
 
-	private String parseChunkMsg(String[] secondLine, String body) {
+	private String parseChunk(String[] secondLine, String body) {
 
 		byte [] body_bytes = body.getBytes(StandardCharsets.ISO_8859_1);
 
@@ -183,7 +183,7 @@ public class HandleMessage implements Runnable {
 		Confidential conf = new Confidential(b.getkey());
 		
 		body_bytes = conf.decryptation(body_bytes);
-		Path filepath = PeerMain.getPath().resolve("restoreFile-" + b.getname());
+		Path filepath = PeerMain.getPath().resolve("Restore File-" + b.getname());
 
 		try {
 			Files.createFile(filepath);
@@ -210,7 +210,7 @@ public class HandleMessage implements Runnable {
 
 			@Override
 			public void failed(Throwable arg0, ByteBuffer arg1) {
-				Utils.LOG.warning("Error: Could not write!");
+				Utils.LOG.warning("Could not write!");
 			}
 
 		};
@@ -222,10 +222,10 @@ public class HandleMessage implements Runnable {
 		return null;
 	}
 
-	private String parseGetChunkMsg(String[] secondLine) {
-		InetAddress addr;
+	private String parseGetChunk(String[] secondLine) {
+		InetAddress address;
 		try {
-			addr = InetAddress.getByName(secondLine[0]);
+			address = InetAddress.getByName(secondLine[0]);
 		} catch (UnknownHostException e) {
 			e.printStackTrace();
 			return null;
@@ -237,37 +237,37 @@ public class HandleMessage implements Runnable {
 		Chunk chunkInfo = new Chunk(chunkNo, fileID);
 		if(DatabaseManager.checkChunkStored(dbConnection, chunkInfo )) {
 			String body = Utils.read(PeerMain.getPath().resolve(chunkInfo.getfile()).toString());
-			String message = MsgFactory.getChunk(this.myPeerID, fileID, chunkNo, body.getBytes(StandardCharsets.ISO_8859_1));
-			Client.sendMessage(addr, port, message, false);
+			String msg = CreateMsg.getChunk(this.myPeerID, fileID, chunkNo, body.getBytes(StandardCharsets.ISO_8859_1));
+			Client.sendMsg(address, port, msg, false);
 		} else {
-			String message = MsgFactory.getGetChunk(this.myPeerID, addr, port, fileID, chunkNo);
-			Client.sendMessage(this.peer.getChordManager().getSuccessor(0).getAddr(),
-					this.peer.getChordManager().getSuccessor(0).getPort(), message, false);
+			String msg = CreateMsg.getGetChunk(this.myPeerID, address, port, fileID, chunkNo);
+			Client.sendMsg(this.peer.getChordManager().getSuccessor(0).getAddress(),
+					this.peer.getChordManager().getSuccessor(0).getPort(), msg, false);
 		}
 		return null;
 	}
 
 
-	private void delete(String fileToDelete, int repDegree) {
-		System.out.println("Received Delete for file: " + fileToDelete + ". Rep Degree: " + repDegree);
-		boolean isFileStored = DatabaseManager.checkFile(dbConnection, fileToDelete);
+	private void delete(String file, int repDeg) {
+		System.out.println("Delete file: " + file + ". Replication Degree: " + repDeg);
+		boolean isFileStored = DatabaseManager.checkFile(dbConnection, file);
 		if (isFileStored) {
-			ArrayList<Chunk> allChunks = DatabaseManager.getFileChunks(dbConnection, fileToDelete);
-			allChunks.forEach(chunk -> {
+			ArrayList<Chunk> chunks = DatabaseManager.getFileChunks(dbConnection, file);
+			chunks.forEach(chunk -> {
 				Utils.delete(PeerMain.getPath().resolve(chunk.getfile()));
 				PeerMain.decreaseStorageUsed(chunk.getsize());
 			});
-			DatabaseManager.deleteFile(dbConnection, fileToDelete);
-			repDegree--;
-			Utils.LOG.info("Deleted file: " + fileToDelete);
+			DatabaseManager.deleteFile(dbConnection, file);
+			repDeg--;
+			Utils.LOG.info("Deleted file: " + file);
 		}
 		
-		if (repDegree > 0 || !isFileStored) {
-			System.out.println("Forwarding delete to peer: " + peer.getChordManager().getSuccessor(0).getId());
-			String message = MsgFactory.getDelete(myPeerID, fileToDelete, repDegree);
+		if (repDeg > 0 || !isFileStored) {
+			System.out.println("Deleting from peer: " + peer.getChordManager().getSuccessor(0).getId());
+			String message = CreateMsg.getDelete(myPeerID, file, repDeg);
 			PeerI successor = peer.getChordManager().getSuccessor(0);
-			Client.sendMessage(successor.getAddr(), successor.getPort(), message, false);
-			Utils.LOG.info("Forwarded delete: " + fileToDelete);
+			Client.sendMsg(successor.getAddress(), successor.getPort(), message, false);
+			Utils.LOG.info("Forwarded delete: " + file);
 		}
 		
 	}
@@ -278,7 +278,7 @@ public class HandleMessage implements Runnable {
 		if (DatabaseManager.checkResponsible(dbConnection, fileToDelete)) return;
 		delete(fileToDelete,repDegree);
 	}
-	private void parseInitDelete(String[] firstLine, String[] secondLine) {
+	private void parseIDelete(String[] firstLine, String[] secondLine) {
 		
 		String fileToDelete = secondLine[0];
 		int repDegree = DatabaseManager.getMaxRepDegree(dbConnection, fileToDelete);
@@ -286,187 +286,187 @@ public class HandleMessage implements Runnable {
 	}
 
 
-	private String parseStoredMsg(String[] lines) {
+	private String parseStored(String[] lines) {
 		Utils.LOG.info("Stored Received");
 		String fileID = lines[0];
 		Integer chunkNo = Integer.valueOf(lines[1]);
-		Integer repDegree = Integer.valueOf(lines[2]);
+		Integer repDeg = Integer.valueOf(lines[2]);
 		
-		boolean iAmResponsible = DatabaseManager.checkResponsible(dbConnection, fileID);
+		boolean Responsible = DatabaseManager.checkResponsible(dbConnection, fileID);
 		Chunk chunkInfo = new Chunk(chunkNo,fileID);
-		boolean chunkExists = DatabaseManager.checkChunkStored(dbConnection, chunkInfo);
+		boolean chunkExist = DatabaseManager.checkChunkStored(dbConnection, chunkInfo);
 		
-		if(iAmResponsible) {
+		if(Responsible) {
 			
-			PeerI peerWhichRequested = DatabaseManager.getRequestingPeer(dbConnection, fileID);
-			if(chunkExists) {
-				repDegree++;
-				chunkInfo.setrepdegree(repDegree);
+			PeerI peerRequested = DatabaseManager.getRequestingPeer(dbConnection, fileID);
+			if(chunkExist) {
+				repDeg++;
+				chunkInfo.setrepdegree(repDeg);
 				DatabaseManager.updateRepDeg(dbConnection, chunkInfo);
 			} else {
-				chunkInfo.setrepdegree(repDegree);
+				chunkInfo.setrepdegree(repDeg);
 				chunkInfo.setsize(-1);
 				DatabaseManager.storeChunk(dbConnection, chunkInfo);
 			}
 			
-			if(peerWhichRequested != null) {
-				String message = MsgFactory.getConfirmStored(myPeerID, fileID, chunkNo, repDegree);
-				Client.sendMessage(peerWhichRequested.getAddr(), peerWhichRequested.getPort(), message, false);
+			if(peerRequested != null) {
+				String msg = CreateMsg.getConfirmStored(myPeerID, fileID, chunkNo, repDeg);
+				Client.sendMsg(peerRequested.getAddress(), peerRequested.getPort(), msg, false);
 			} else {
-				Utils.LOG.severe("ERROR: could not get peer which requested backup!");
+				Utils.LOG.severe("Could not get peer which requested backup!");
 			}
 			return null;
 		}
-		if (chunkExists) {
-			repDegree++;
+		if (chunkExist) {
+			repDeg++;
 		}
 		AbstractPeer predecessor = peer.getChordManager().getPredecessor();
 		if (predecessor.isNull()) {
-			Utils.LOG.info("Null predecessor");
+			Utils.LOG.info("There's no predecessor");
 		}else {
-			String message = MsgFactory.getStored(myPeerID, fileID, chunkNo, repDegree);
-			Client.sendMessage(predecessor.getAddr(),predecessor.getPort(), message, false);
+			String msg = CreateMsg.getStored(myPeerID, fileID, chunkNo, repDeg);
+			Client.sendMsg(predecessor.getAddress(),predecessor.getPort(), msg, false);
 		}
 		return null;
 	}
 
-	private void parsePutChunkMsg(String[] header, String body) {
+	private void parsePutChunk(String[] header, String body) {
 		ManageChord chordManager = peer.getChordManager();
 		byte [] body_bytes = body.getBytes(StandardCharsets.ISO_8859_1);
 
 		String id = header[0].trim();
-		InetAddress addr = null;
+		InetAddress address = null;
 		try {
-			addr = InetAddress.getByName(header[1]);
+			address = InetAddress.getByName(header[1]);
 		} catch (UnknownHostException e) {
 			e.printStackTrace();
 		}
 		int port = Integer.parseInt(header[2].trim());
 
-		String fileID = header[3];
-		int chunkNo = Integer.parseInt(header[4]);
-		int replicationDegree = Integer.parseInt(header[5]);
+		String IDfile = header[3];
+		int nChunk = Integer.parseInt(header[4]);
+		int repDeg = Integer.parseInt(header[5]);
 
-		Path filePath = PeerMain.getPath().resolve(fileID + "_" + chunkNo);
+		Path path = PeerMain.getPath().resolve(IDfile + "_" + nChunk);
 
-		PeerI peerThatRequestedBackup = new PeerI(id,addr,port);
-		DatabaseManager.storePeer(dbConnection, peerThatRequestedBackup);
-		Stored fileInfo = new Stored(fileID, true);
-		fileInfo.setpeer(peerThatRequestedBackup.getId());
-		fileInfo.setrepdegree(replicationDegree);
+		PeerI peerRequesting = new PeerI(id,address,port);
+		DatabaseManager.storePeer(dbConnection, peerRequesting);
+		Stored fileInfo = new Stored(IDfile, true);
+		fileInfo.setpeer(peerRequesting.getId());
+		fileInfo.setrepdegree(repDeg);
 		DatabaseManager.storeFile(dbConnection, fileInfo);
 		
 
 		if(id.equals(myPeerID)) {
 			DatabaseManager.setStoring(dbConnection, fileInfo.getfile(), false);
 			PeerI nextPeer = chordManager.getSuccessor(0);
-			String message = MsgFactory.getKeepChunk(id, addr, port, fileID, chunkNo, replicationDegree, body_bytes);
-			Client.sendMessage(nextPeer.getAddr(),nextPeer.getPort(), message, false);
+			String msg = CreateMsg.getKeepChunk(id, address, port, IDfile, nChunk, repDeg, body_bytes);
+			Client.sendMsg(nextPeer.getAddress(),nextPeer.getPort(), msg, false);
 			return;
 		}
 
 		if(!PeerMain.capacityExceeded(body_bytes.length)) {
 			Utils.LOG.info("Writing/Saving chunk");
 			try {
-				Utils.write(filePath, body_bytes);
-				DatabaseManager.storeChunk(dbConnection, new Chunk(chunkNo,fileID, body_bytes.length));
+				Utils.write(path, body_bytes);
+				DatabaseManager.storeChunk(dbConnection, new Chunk(nChunk,IDfile, body_bytes.length));
 				
 			} catch (IOException e) {
 				e.printStackTrace();
 			}
-			if(replicationDegree == 1) {
-				String message = MsgFactory.getStored(chordManager.getPeerInfo().getId(), fileID, chunkNo, 1);
-				Client.sendMessage(addr, port, message, false);
+			if(repDeg == 1) {
+				String msg = CreateMsg.getStored(chordManager.getPeerInfo().getId(), IDfile, nChunk, 1);
+				Client.sendMsg(address, port, msg, false);
 				return;
 			} else {
-				String message = MsgFactory.getKeepChunk(id, addr, port, fileID, chunkNo, replicationDegree - 1, body_bytes);
-				Client.sendMessage(chordManager.getSuccessor(0).getAddr(),chordManager.getSuccessor(0).getPort(), message, false);
+				String msg = CreateMsg.getKeepChunk(id, address, port, IDfile, nChunk, repDeg - 1, body_bytes);
+				Client.sendMsg(chordManager.getSuccessor(0).getAddress(),chordManager.getSuccessor(0).getPort(), msg, false);
 			}
 		} else {
-			String message = MsgFactory.getKeepChunk(id, addr, port, fileID, chunkNo, replicationDegree, body_bytes);
-			Client.sendMessage(chordManager.getSuccessor(0).getAddr(),chordManager.getSuccessor(0).getPort(), message, false);
+			String msg = CreateMsg.getKeepChunk(id, address, port, IDfile, nChunk, repDeg, body_bytes);
+			Client.sendMsg(chordManager.getSuccessor(0).getAddress(),chordManager.getSuccessor(0).getPort(), msg, false);
 			Utils.LOG.warning("Capacity Exceeded");
 
 		}
 	}
 
-	private void parseKeepChunkMsg(String[] header, String body) {
+	private void parseKeepChunk(String[] header, String body) {
 		ManageChord chordManager = peer.getChordManager();
 		byte [] body_bytes = body.getBytes(StandardCharsets.ISO_8859_1);
 
 		String id_request = header[0].trim();
-		InetAddress addr_request = null;
+		InetAddress address_request = null;
 		try {
-			addr_request = InetAddress.getByName(header[1]);
+			address_request = InetAddress.getByName(header[1]);
 		} catch (UnknownHostException e) {
 			e.printStackTrace();
 		}
 		int port_request = Integer.parseInt(header[2].trim());
 
-		String fileID = header[3];
-		int chunkNo = Integer.parseInt(header[4]);
-		int replicationDegree = Integer.parseInt(header[5]);
+		String IDfile = header[3];
+		int nChunk = Integer.parseInt(header[4]);
+		int repDeg = Integer.parseInt(header[5]);
 
-		Path filePath = PeerMain.getPath().resolve(fileID + "_" + chunkNo);
-		if(DatabaseManager.checkResponsible(dbConnection, fileID)) {
+		Path path = PeerMain.getPath().resolve(IDfile + "_" + nChunk);
+		if(DatabaseManager.checkResponsible(dbConnection, IDfile)) {
 			Utils.LOG.info("KeepChunk: I am responsible ");
 			PeerI predecessor = (PeerI) chordManager.getPredecessor();
-			String message = MsgFactory.getStored(myPeerID, fileID, chunkNo, 0);
-			Client.sendMessage(predecessor.getAddr(), predecessor.getPort(), message, false);
+			String msg = CreateMsg.getStored(myPeerID, IDfile, nChunk, 0);
+			Client.sendMsg(predecessor.getAddress(), predecessor.getPort(), msg, false);
 			return;
 		}
 		if(id_request.equals(myPeerID)) {
 			Utils.LOG.info("I am responsible");
 			
 			PeerI nextPeer = chordManager.getSuccessor(0);
-			String message = MsgFactory.getKeepChunk(id_request, addr_request, port_request, fileID, chunkNo, replicationDegree, body_bytes);
-			Client.sendMessage(nextPeer.getAddr(),nextPeer.getPort(), message, false);
+			String message = CreateMsg.getKeepChunk(id_request, address_request, port_request, IDfile, nChunk, repDeg, body_bytes);
+			Client.sendMsg(nextPeer.getAddress(),nextPeer.getPort(), message, false);
 			return;
 		}
 
 		if(!PeerMain.capacityExceeded(body_bytes.length)) {
-			DatabaseManager.storeFile(dbConnection, new Stored(fileID, false));
-			DatabaseManager.storeChunk(dbConnection, new Chunk(chunkNo,fileID, body_bytes.length));
+			DatabaseManager.storeFile(dbConnection, new Stored(IDfile, false));
+			DatabaseManager.storeChunk(dbConnection, new Chunk(nChunk,IDfile, body_bytes.length));
 			try {
-				Utils.write(filePath, body_bytes);
+				Utils.write(path, body_bytes);
 			} catch (IOException e) {
 				e.printStackTrace();
 			}
-			if(replicationDegree == 1) {
-				String message = MsgFactory.getStored(chordManager.getPeerInfo().getId(), fileID, chunkNo, 1);
-				Client.sendMessage(chordManager.getPredecessor().getAddr(),chordManager.getPredecessor().getPort(), message, false);
+			if(repDeg == 1) {
+				String msg = CreateMsg.getStored(chordManager.getPeerInfo().getId(), IDfile, nChunk, 1);
+				Client.sendMsg(chordManager.getPredecessor().getAddress(),chordManager.getPredecessor().getPort(), msg, false);
 
 			} else {
-				String message = MsgFactory.getKeepChunk(id_request, addr_request, port_request, fileID, chunkNo, replicationDegree - 1, body_bytes);
-				Client.sendMessage(chordManager.getSuccessor(0).getAddr(),chordManager.getSuccessor(0).getPort(), message, false);
+				String msg = CreateMsg.getKeepChunk(id_request, address_request, port_request, IDfile, nChunk, repDeg - 1, body_bytes);
+				Client.sendMsg(chordManager.getSuccessor(0).getAddress(),chordManager.getSuccessor(0).getPort(), msg, false);
 			}
 			return;
 		} else {
-			Utils.LOG.warning("NAO ESPACO");
-			String message = MsgFactory.getKeepChunk(id_request, addr_request, port_request, fileID, chunkNo, replicationDegree, body_bytes);
-			Client.sendMessage(chordManager.getSuccessor(0).getAddr(),chordManager.getSuccessor(0).getPort(), message, false);
+			Utils.LOG.warning("No Space");
+			String msg = CreateMsg.getKeepChunk(id_request, address_request, port_request, IDfile, nChunk, repDeg, body_bytes);
+			Client.sendMsg(chordManager.getSuccessor(0).getAddress(),chordManager.getSuccessor(0).getPort(), msg, false);
 			return;
 		}
 	}
 
 
-	private void parseNotifyMsg(String[] firstLine, String[] secondLine) {
+	private void parseNotify(String[] firstLine, String[] secondLine) {
 		String id = firstLine[2];
-		InetAddress addr = socket.getInetAddress();
+		InetAddress address = socket.getInetAddress();
 		int port = Integer.parseInt(secondLine[0].trim());
-		PeerI potentialNewPredecessor = new PeerI(id, addr, port);
-		if (potentialNewPredecessor.getId() == myPeerID) return;
+		PeerI potentialPredecessor = new PeerI(id, address, port);
+		if (potentialPredecessor.getId() == myPeerID) return;
 		AbstractPeer previousPredecessor = peer.getChordManager().getPredecessor();
-		if (previousPredecessor.isNull() || Utils.inTheMiddle(previousPredecessor.getId(), myPeerID, potentialNewPredecessor.getId())) {
-			PeerI newPredecessor = potentialNewPredecessor;
-			Utils.LOG.info("Updated predecessor to " + newPredecessor.getId());
+		if (previousPredecessor.isNull() || Utils.inTheMiddle(previousPredecessor.getId(), myPeerID, potentialPredecessor.getId())) {
+			PeerI newPredecessor = potentialPredecessor;
+			Utils.LOG.info("Update predecessor to " + newPredecessor.getId());
 			this.peer.getChordManager().setPredecessor(newPredecessor);
-			Utils.LOG.info("Updated predecessor, sending responsibility");
+			Utils.LOG.info("Update predecessor, sending responsibility");
 			peer.sendResponsability();
 		}
 	}
 
-	void sendResponse(SSLSocket socket, String response) {
+	void sendRespo(SSLSocket socket, String response) {
 		OutputStream sendStream;
 		try {
 			sendStream = socket.getOutputStream();
@@ -474,9 +474,9 @@ public class HandleMessage implements Runnable {
 			e.printStackTrace();
 			return;
 		}
-		byte[] sendData = response.getBytes(StandardCharsets.ISO_8859_1);
+		byte[] sendInfo = response.getBytes(StandardCharsets.ISO_8859_1);
 		try {
-			sendStream.write(sendData);
+			sendStream.write(sendInfo);
 		} catch (IOException e) {
 			e.printStackTrace();
 			return;

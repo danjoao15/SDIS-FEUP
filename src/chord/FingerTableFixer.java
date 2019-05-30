@@ -3,7 +3,7 @@ package chord;
 import java.math.BigInteger;
 
 import communication.Client;
-import communication.MsgFactory;
+import communication.CreateMsg;
 import communication.MsgType;
 import util.Utils;
 
@@ -25,12 +25,12 @@ public class FingerTableFixer implements Runnable {
 		try {
 			for(int i = 0; i < ManageChord.getM(); i++) {
 				String keyToLookup = getKey(chord.getPeerInfo().getId(), i);
-				String lookupMessage = MsgFactory.getLookup(chord.getPeerInfo().getId(), keyToLookup);
+				String lookupMessage = CreateMsg.getLookup(chord.getPeerInfo().getId(), keyToLookup);
 				String response = chord.lookup(keyToLookup);
 				response = response.trim();
 				PeerI info = new PeerI(response);
 				while(response.startsWith(MsgType.ASK.getType())) {
-					response = Client.sendMessage(info.getAddr(), info.getPort(), lookupMessage, true);
+					response = Client.sendMsg(info.getAddress(), info.getPort(), lookupMessage, true);
 					if (response == null) return;
 					info = new PeerI(response);
 				}

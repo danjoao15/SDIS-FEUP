@@ -65,7 +65,7 @@ public class DatabaseManager {
 		try {
 			PreparedStatement s = c.prepareStatement(storePeer);
 			s.setString(1, peer.getId());
-			s.setString(2, peer.getAddr().getHostAddress());
+			s.setString(2, peer.getAddress().getHostAddress());
 			s.setInt(3, peer.getPort());
 			s.executeUpdate();
 			c.commit();
@@ -81,7 +81,7 @@ public class DatabaseManager {
 	private static void updatePeer(Connection c, PeerI peer) {
 		try {
 			PreparedStatement s = c.prepareStatement(updatePeer);
-			s.setString(1, peer.getAddr().getHostAddress());
+			s.setString(1, peer.getAddress().getHostAddress());
 			s.setInt(2, peer.getPort());
 			s.setString(3, peer.getId());
 			s.executeUpdate();

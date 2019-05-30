@@ -10,7 +10,7 @@ public class NullPeer extends AbstractPeer{
 	}
 
 	@Override
-	public InetAddress getAddr() {
+	public InetAddress getAddress() {
 		return null;
 	}
 

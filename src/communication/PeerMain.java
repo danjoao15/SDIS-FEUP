@@ -218,8 +218,8 @@ public class PeerMain {
 		if (toSend.isEmpty())return;
 		System.out.println("Sending resposibility for files to peer: " + predecessor.getId());
 		toSend.forEach(k->System.out.println(k.getfile()));
-		String msg = MsgFactory.getResponsible(this.chordManager.getPeerInfo().getId(), toSend);
-		Client.sendMessage(predecessor.getAddr(), predecessor.getPort(), msg, false);
+		String msg = CreateMsg.getResponsible(this.chordManager.getPeerInfo().getId(), toSend);
+		Client.sendMsg(predecessor.getAddress(), predecessor.getPort(), msg, false);
 		System.out.println("Sent responsible");
 	}
 
