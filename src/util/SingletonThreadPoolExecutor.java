@@ -1,4 +1,4 @@
-package utils;
+package util;
 
 import java.util.concurrent.RejectedExecutionHandler;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
@@ -9,12 +9,14 @@ public class SingletonThreadPoolExecutor {
 	
 	
 	protected SingletonThreadPoolExecutor() {
-		/* ThreadPoolExecutor(int corePoolSize, int maximumPoolSize, long keepAliveTime, TimeUnit unit, BlockingQueue<Runnable> workQueue) */
-
 		RejectedExecutionHandler handler = new MyRejectedExecutionHandler();
 		thread = new ScheduledThreadPoolExecutor(Runtime.getRuntime().availableProcessors(), handler);
 	}
 
+	public ScheduledThreadPoolExecutor get() {
+		return thread;
+	}
+	
 	public static SingletonThreadPoolExecutor getInstance() {
 		if(instance == null) {
 			instance = new SingletonThreadPoolExecutor();
@@ -22,10 +24,7 @@ public class SingletonThreadPoolExecutor {
 		return instance;
 	}
 	
-	/**
-	 * @return the thread
-	 */
-	public ScheduledThreadPoolExecutor get() {
-		return thread;
-	}
+	
+	
+	
 }

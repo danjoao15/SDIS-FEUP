@@ -1,8 +1,0 @@
-/**
- * 
- */
-/**
- * @author ineeve
- *
- */
-package communication;

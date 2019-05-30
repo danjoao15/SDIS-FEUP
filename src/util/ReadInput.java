@@ -1,4 +1,4 @@
-package utils;
+package util;
 
 import java.nio.file.Files;
 import java.nio.file.Paths;
@@ -20,11 +20,11 @@ public class ReadInput{
 	
 	public void run() {
 		while(true) {
-			System.out.println("Choose an option: ");
-			System.out.println("\t0. Exit");
-			System.out.println("\t1. Backup");
-			System.out.println("\t2. Restore");
-			System.out.println("\t3. Delete");
+			System.out.println("Select a Protocol: ");
+			System.out.println("\t0. Terminate Program");
+			System.out.println("\t1. Backup File");
+			System.out.println("\t2. Restore File");
+			System.out.println("\t3. Delete File");
 			Scanner scanner = new Scanner(System.in);
 			Integer op = null;
 			try {
@@ -53,7 +53,7 @@ public class ReadInput{
 				break;
 			}
 			default: {
-				System.out.println("Error: not a valid input!");
+				System.out.println("Error: That's not a valid input!");
 				continue;
 			}
 			}
@@ -66,7 +66,7 @@ public class ReadInput{
 		if (allRequests.size() > 0) {
 			int option = -1;
 			do {
-				System.out.println("Select a file to restore:");
+				System.out.println("Choose a file to restore:");
 				for (int i = 0; i < allRequests.size(); i++) {
 					System.out.println(i + ". " + allRequests.get(i).getname() + " -> " + allRequests.get(i).getid());
 				}
@@ -79,7 +79,7 @@ public class ReadInput{
 			} while(option < 0 && option >= allRequests.size());
 			peer.restore(allRequests.get(option));
 		} else {
-			System.out.println("You need to backup files before restoring");
+			System.out.println("You must backup files before restoring");
 		}
 	}
 	
@@ -88,7 +88,7 @@ public class ReadInput{
 		if (allRequests.size() > 0) {
 			int option = -1;
 			do {
-				System.out.println("Select a file to delete:");
+				System.out.println("Choose a file to delete:");
 				for (int i = 0; i < allRequests.size(); i++) {
 					System.out.println(i + ". " + allRequests.get(i).getname() + " -> " + allRequests.get(i).getid());
 				}
@@ -102,7 +102,7 @@ public class ReadInput{
 			peer.delete(allRequests.get(option).getid());
 			
 		} else {
-			System.out.println("You need to backup files before deleting");
+			System.out.println("You must backup files before deleting");
 		}
 		
 
@@ -113,12 +113,12 @@ public class ReadInput{
 		String filename;
 		filename = in.next();
 		if(!Files.exists(Paths.get(filename))) {
-			System.out.println("Error: file does not exist!");
+			System.out.println("Error: That file does not exist!");
 			return;
 		}
 		Integer degree = 0;
 		do {
-			System.out.println("Replication Degree (1-9):");
+			System.out.println("Replication Degree (From 1-8):");
 			try {
 				degree = in.nextInt();
 			}catch(InputMismatchException e) {

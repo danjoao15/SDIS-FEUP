@@ -1,6 +1,3 @@
-/**
- * 
- */
 package communication;
 
 import java.io.IOException;
@@ -23,19 +20,15 @@ import java.util.Deque;
 import javax.net.ssl.SSLSocket;
 
 import chord.AbstractPeer;
-import chord.ChordManager;
+import chord.ManageChord;
 import chord.PeerI;
 import database.Backup;
 import database.Chunk;
 import database.DBUtils;
 import database.Stored;
-import utils.Confidentiality;
-import utils.Utils;
+import util.Confidential;
+import util.Utils;
 
-/**
- * @author anabela
- *
- */
 public class ParseMessageAndSendResponse implements Runnable {
 
 	private byte[] readData;
@@ -63,20 +56,15 @@ public class ParseMessageAndSendResponse implements Runnable {
 
 	}
 
-	/**
-	 * Parses the received request, processes it and returns the protocol response
-	 * @param readData
-	 * @return
-	 */
 	String parseMessage(byte[] readData) {
 		String request = new String(readData,StandardCharsets.ISO_8859_1);
-		Utils.LOGGER.finest("SSLServer: " + request);
+		Utils.LOG.finest("SSLServer: " + request);
 
 		request = request.trim();
 		String[] lines = request.split("\r\n");
 		String[] firstLine = lines[0].split(" ");
 		String[] secondLine = null;
-		String thirdLine = null;//chunk body
+		String thirdLine = null;
 		if (lines.length > 1) {
 			secondLine = lines[1].split(" ");
 		}
@@ -99,7 +87,7 @@ public class ParseMessageAndSendResponse implements Runnable {
 			if (secondLine != null) {
 				response = peer.getChordManager().lookup(secondLine[0]);
 			}else {
-				Utils.LOGGER.warning("Invalid lookup message");
+				Utils.LOG.warning("Invalid lookup message");
 			}
 			break;
 		case PING:
@@ -133,7 +121,7 @@ public class ParseMessageAndSendResponse implements Runnable {
 		case CONFIRMSTORED:
 			parseConfirmStored(secondLine);
 		default:
-			Utils.LOGGER.warning("Unexpected message received: " + request);
+			Utils.LOG.warning("Unexpected message received: " + request);
 			break;
 		}
 		return response;
@@ -143,12 +131,12 @@ public class ParseMessageAndSendResponse implements Runnable {
 		String fileId = secondLine[0];
 		Integer chunkNo = Integer.parseInt(secondLine[1]);
 		Integer repDegree = Integer.parseInt(secondLine[2]);
-		Utils.LOGGER.info("Chunk " + fileId + "_" + chunkNo + ", saved with rep degree=" + repDegree);
+		Utils.LOG.info("Chunk " + fileId + "_" + chunkNo + ", saved with rep degree=" + repDegree);
 		
 	}
 
 	private String parseResponsible(String[] lines) {
-		Utils.LOGGER.info("Received Responsible");
+		Utils.LOG.info("Received Responsible");
 		for(int i=1;i<lines.length-1;i++) {
 			String[] currentLine = lines[i].split(" ");
 			String fileID = currentLine[0];
@@ -192,9 +180,9 @@ public class ParseMessageAndSendResponse implements Runnable {
 		Backup b = DBUtils.getBackupRequested(dbConnection, file_id);
 
 		
-		Confidentiality c = new Confidentiality(b.getkey());
+		Confidential conf = new Confidential(b.getkey());
 		
-		body_bytes = c.decrypt(body_bytes);
+		body_bytes = conf.decrypt(body_bytes);
 		Path filepath = PeerMain.getPath().resolve("restoreFile-" + b.getname());
 
 		try {
@@ -217,19 +205,19 @@ public class ParseMessageAndSendResponse implements Runnable {
 		CompletionHandler<Integer, ByteBuffer> writter = new CompletionHandler<Integer, ByteBuffer>() {
 			@Override
 			public void completed(Integer result, ByteBuffer buffer) {
-				Utils.LOGGER.info("Finished writing!");
+				Utils.LOG.info("Finished writing!");
 			}
 
 			@Override
 			public void failed(Throwable arg0, ByteBuffer arg1) {
-				Utils.LOGGER.warning("Error: Could not write!");
+				Utils.LOG.warning("Error: Could not write!");
 			}
 
 		};
 		ByteBuffer src = ByteBuffer.allocate(body_bytes.length);
 		src.put(body_bytes);
 		src.flip();
-		channel.write(src, chunkNo*Utils.MAX_LENGTH_CHUNK, src, writter);
+		channel.write(src, chunkNo*Utils.MAX_CHUNK_SIZE, src, writter);
 
 		return null;
 	}
@@ -247,11 +235,11 @@ public class ParseMessageAndSendResponse implements Runnable {
 		Integer chunkNo = Integer.valueOf(secondLine[3]);
 
 		Chunk chunkInfo = new Chunk(chunkNo, fileID);
-		if(DBUtils.checkStoredChunk(dbConnection, chunkInfo )) { //Tenho o chunk
-			String body = Utils.readFile(PeerMain.getPath().resolve(chunkInfo.getfile()).toString());
+		if(DBUtils.checkStoredChunk(dbConnection, chunkInfo )) {
+			String body = Utils.read(PeerMain.getPath().resolve(chunkInfo.getfile()).toString());
 			String message = MsgFactory.getChunk(this.myPeerID, fileID, chunkNo, body.getBytes(StandardCharsets.ISO_8859_1));
 			Client.sendMessage(addr, port, message, false);
-		} else { //ReSend GETCHUNK to successor
+		} else {
 			String message = MsgFactory.getGetChunk(this.myPeerID, addr, port, fileID, chunkNo);
 			Client.sendMessage(this.peer.getChordManager().getSuccessor(0).getAddr(),
 					this.peer.getChordManager().getSuccessor(0).getPort(), message, false);
@@ -260,18 +248,18 @@ public class ParseMessageAndSendResponse implements Runnable {
 	}
 
 
-	private void deleteFile(String fileToDelete, int repDegree) {
+	private void delete(String fileToDelete, int repDegree) {
 		System.out.println("Received Delete for file: " + fileToDelete + ". Rep Degree: " + repDegree);
 		boolean isFileStored = DBUtils.isFileStored(dbConnection, fileToDelete);
 		if (isFileStored) {
 			ArrayList<Chunk> allChunks = DBUtils.getAllChunksOfFile(dbConnection, fileToDelete);
 			allChunks.forEach(chunk -> {
-				Utils.deleteFile(PeerMain.getPath().resolve(chunk.getfile()));
+				Utils.delete(PeerMain.getPath().resolve(chunk.getfile()));
 				PeerMain.decreaseStorageUsed(chunk.getsize());
 			});
-			DBUtils.deleteFile(dbConnection, fileToDelete);
+			DBUtils.delete(dbConnection, fileToDelete);
 			repDegree--;
-			Utils.LOGGER.info("Deleted file: " + fileToDelete);
+			Utils.LOG.info("Deleted file: " + fileToDelete);
 		}
 		
 		if (repDegree > 0 || !isFileStored) {
@@ -279,7 +267,7 @@ public class ParseMessageAndSendResponse implements Runnable {
 			String message = MsgFactory.getDelete(myPeerID, fileToDelete, repDegree);
 			PeerI successor = peer.getChordManager().getSuccessor(0);
 			Client.sendMessage(successor.getAddr(), successor.getPort(), message, false);
-			Utils.LOGGER.info("Forwarded delete: " + fileToDelete);
+			Utils.LOG.info("Forwarded delete: " + fileToDelete);
 		}
 		
 	}
@@ -288,18 +276,18 @@ public class ParseMessageAndSendResponse implements Runnable {
 		String fileToDelete = secondLine[0].trim();
 		int repDegree = Integer.parseInt(secondLine[1]);
 		if (DBUtils.amIResponsible(dbConnection, fileToDelete)) return;
-		deleteFile(fileToDelete,repDegree);
+		delete(fileToDelete,repDegree);
 	}
 	private void parseInitDelete(String[] firstLine, String[] secondLine) {
 		
 		String fileToDelete = secondLine[0];
 		int repDegree = DBUtils.getMaxRepDegree(dbConnection, fileToDelete);
-		deleteFile(fileToDelete,repDegree);
+		delete(fileToDelete,repDegree);
 	}
 
 
 	private String parseStoredMsg(String[] lines) {
-		Utils.LOGGER.info("Stored Received");
+		Utils.LOG.info("Stored Received");
 		String fileID = lines[0];
 		Integer chunkNo = Integer.valueOf(lines[1]);
 		Integer repDegree = Integer.valueOf(lines[2]);
@@ -311,21 +299,21 @@ public class ParseMessageAndSendResponse implements Runnable {
 		if(iAmResponsible) {
 			
 			PeerI peerWhichRequested = DBUtils.getPeerWhichRequestedBackup(dbConnection, fileID);
-			if(chunkExists) { //Exists
-				repDegree++; // I am also storing the chunk
+			if(chunkExists) {
+				repDegree++;
 				chunkInfo.setrepdegree(repDegree);
 				DBUtils.updateStoredChunkRepDegree(dbConnection, chunkInfo);
 			} else {
 				chunkInfo.setrepdegree(repDegree);
 				chunkInfo.setsize(-1);
-				DBUtils.insertStoredChunk(dbConnection, chunkInfo); //size -1 means that I do not have stored the chunk
+				DBUtils.insertStoredChunk(dbConnection, chunkInfo);
 			}
 			
 			if(peerWhichRequested != null) {
 				String message = MsgFactory.getConfirmStored(myPeerID, fileID, chunkNo, repDegree);
 				Client.sendMessage(peerWhichRequested.getAddr(), peerWhichRequested.getPort(), message, false);
 			} else {
-				Utils.LOGGER.severe("ERROR: could not get peer which requested backup!");
+				Utils.LOG.severe("ERROR: could not get peer which requested backup!");
 			}
 			return null;
 		}
@@ -334,7 +322,7 @@ public class ParseMessageAndSendResponse implements Runnable {
 		}
 		AbstractPeer predecessor = peer.getChordManager().getPredecessor();
 		if (predecessor.isNull()) {
-			Utils.LOGGER.info("Null predecessor");
+			Utils.LOG.info("Null predecessor");
 		}else {
 			String message = MsgFactory.getStored(myPeerID, fileID, chunkNo, repDegree);
 			Client.sendMessage(predecessor.getAddr(),predecessor.getPort(), message, false);
@@ -343,7 +331,7 @@ public class ParseMessageAndSendResponse implements Runnable {
 	}
 
 	private void parsePutChunkMsg(String[] header, String body) {
-		ChordManager chordManager = peer.getChordManager();
+		ManageChord chordManager = peer.getChordManager();
 		byte [] body_bytes = body.getBytes(StandardCharsets.ISO_8859_1);
 
 		String id = header[0].trim();
@@ -369,9 +357,7 @@ public class ParseMessageAndSendResponse implements Runnable {
 		DBUtils.insertStoredFile(dbConnection, fileInfo);
 		
 
-		if(id.equals(myPeerID)) {//sou o dono do ficheiro que quero fazer backup...
-			//nao faz senido guardarmos um ficheiro com o chunk, visto que guardamos o ficheiro
-			//enviar o KEEPCHUNK
+		if(id.equals(myPeerID)) {
 			DBUtils.setIamStoring(dbConnection, fileInfo.getfile(), false);
 			PeerI nextPeer = chordManager.getSuccessor(0);
 			String message = MsgFactory.getKeepChunk(id, addr, port, fileID, chunkNo, replicationDegree, body_bytes);
@@ -379,36 +365,33 @@ public class ParseMessageAndSendResponse implements Runnable {
 			return;
 		}
 
-		if(!PeerMain.capacityExceeded(body_bytes.length)) { //tem espaco para fazer o backup
-			Utils.LOGGER.info("Writing/Saving chunk");
+		if(!PeerMain.capacityExceeded(body_bytes.length)) {
+			Utils.LOG.info("Writing/Saving chunk");
 			try {
-				Utils.writeToFile(filePath, body_bytes);
+				Utils.write(filePath, body_bytes);
 				DBUtils.insertStoredChunk(dbConnection, new Chunk(chunkNo,fileID, body_bytes.length));
 				
 			} catch (IOException e) {
 				e.printStackTrace();
 			}
-			if(replicationDegree == 1) {//sou o ultimo a guardar
-				//enviar STORE ao que pediu o backup
+			if(replicationDegree == 1) {
 				String message = MsgFactory.getStored(chordManager.getPeerInfo().getId(), fileID, chunkNo, 1);
 				Client.sendMessage(addr, port, message, false);
 				return;
 			} else {
-				//enivar KEEPCHUNK para o sucessor
 				String message = MsgFactory.getKeepChunk(id, addr, port, fileID, chunkNo, replicationDegree - 1, body_bytes);
 				Client.sendMessage(chordManager.getSuccessor(0).getAddr(),chordManager.getSuccessor(0).getPort(), message, false);
 			}
 		} else {
-			//enviar KEEPCHUNK para o seu sucessor
 			String message = MsgFactory.getKeepChunk(id, addr, port, fileID, chunkNo, replicationDegree, body_bytes);
 			Client.sendMessage(chordManager.getSuccessor(0).getAddr(),chordManager.getSuccessor(0).getPort(), message, false);
-			Utils.LOGGER.warning("Capacity Exceeded");
+			Utils.LOG.warning("Capacity Exceeded");
 
 		}
 	}
 
 	private void parseKeepChunkMsg(String[] header, String body) {
-		ChordManager chordManager = peer.getChordManager();
+		ManageChord chordManager = peer.getChordManager();
 		byte [] body_bytes = body.getBytes(StandardCharsets.ISO_8859_1);
 
 		String id_request = header[0].trim();
@@ -425,17 +408,15 @@ public class ParseMessageAndSendResponse implements Runnable {
 		int replicationDegree = Integer.parseInt(header[5]);
 
 		Path filePath = PeerMain.getPath().resolve(fileID + "_" + chunkNo);
-		if(DBUtils.amIResponsible(dbConnection, fileID)) {//a mensagem ja deu uma volta completa. repDeg nao vai ser o desejado
-			//enviar STORE para o predecessor
-			Utils.LOGGER.info("KeepChunk: I am responsible ");
+		if(DBUtils.amIResponsible(dbConnection, fileID)) {
+			Utils.LOG.info("KeepChunk: I am responsible ");
 			PeerI predecessor = (PeerI) chordManager.getPredecessor();
 			String message = MsgFactory.getStored(myPeerID, fileID, chunkNo, 0);
 			Client.sendMessage(predecessor.getAddr(), predecessor.getPort(), message, false);
 			return;
 		}
-		if(id_request.equals(myPeerID)) {//I AM ASKING FOR THE BACKUP sou dono do ficheiro
-			Utils.LOGGER.info("I am responsible");
-			//reencaminhar a mensagem para o proximo
+		if(id_request.equals(myPeerID)) {
+			Utils.LOG.info("I am responsible");
 			
 			PeerI nextPeer = chordManager.getSuccessor(0);
 			String message = MsgFactory.getKeepChunk(id_request, addr_request, port_request, fileID, chunkNo, replicationDegree, body_bytes);
@@ -443,28 +424,25 @@ public class ParseMessageAndSendResponse implements Runnable {
 			return;
 		}
 
-		if(!PeerMain.capacityExceeded(body_bytes.length)) { //tem espaco para fazer o backup
+		if(!PeerMain.capacityExceeded(body_bytes.length)) {
 			DBUtils.insertStoredFile(dbConnection, new Stored(fileID, false));
 			DBUtils.insertStoredChunk(dbConnection, new Chunk(chunkNo,fileID, body_bytes.length));
 			try {
-				Utils.writeToFile(filePath, body_bytes);
+				Utils.write(filePath, body_bytes);
 			} catch (IOException e) {
 				e.printStackTrace();
 			}
-			if(replicationDegree == 1) {//sou o ultimo a guardar
-				//enviar STORE para o predecessor
+			if(replicationDegree == 1) {
 				String message = MsgFactory.getStored(chordManager.getPeerInfo().getId(), fileID, chunkNo, 1);
 				Client.sendMessage(chordManager.getPredecessor().getAddr(),chordManager.getPredecessor().getPort(), message, false);
 
 			} else {
-				//enivar KEEPCHUNK para o sucessor
 				String message = MsgFactory.getKeepChunk(id_request, addr_request, port_request, fileID, chunkNo, replicationDegree - 1, body_bytes);
 				Client.sendMessage(chordManager.getSuccessor(0).getAddr(),chordManager.getSuccessor(0).getPort(), message, false);
 			}
 			return;
 		} else {
-			Utils.LOGGER.warning("NAO ESPACO");
-			//reencaminhar KEEPCHUNK para o seu sucessor
+			Utils.LOG.warning("NAO ESPACO");
 			String message = MsgFactory.getKeepChunk(id_request, addr_request, port_request, fileID, chunkNo, replicationDegree, body_bytes);
 			Client.sendMessage(chordManager.getSuccessor(0).getAddr(),chordManager.getSuccessor(0).getPort(), message, false);
 			return;
@@ -479,20 +457,15 @@ public class ParseMessageAndSendResponse implements Runnable {
 		PeerI potentialNewPredecessor = new PeerI(id, addr, port);
 		if (potentialNewPredecessor.getId() == myPeerID) return;
 		AbstractPeer previousPredecessor = peer.getChordManager().getPredecessor();
-		if (previousPredecessor.isNull() || Utils.inBetween(previousPredecessor.getId(), myPeerID, potentialNewPredecessor.getId())) {
+		if (previousPredecessor.isNull() || Utils.inTheMiddle(previousPredecessor.getId(), myPeerID, potentialNewPredecessor.getId())) {
 			PeerI newPredecessor = potentialNewPredecessor;
-			Utils.LOGGER.info("Updated predecessor to " + newPredecessor.getId());
+			Utils.LOG.info("Updated predecessor to " + newPredecessor.getId());
 			this.peer.getChordManager().setPredecessor(newPredecessor);
-			Utils.LOGGER.info("Updated predecessor, sending responsibility");
+			Utils.LOG.info("Updated predecessor, sending responsibility");
 			peer.sendResponsability();
 		}
 	}
 
-	/**
-	 * 
-	 * @param socket
-	 * @param response
-	 */
 	void sendResponse(SSLSocket socket, String response) {
 		OutputStream sendStream;
 		try {

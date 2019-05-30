@@ -3,10 +3,6 @@ package chord;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 public class PeerI extends AbstractPeer {
-	
-//	private UnsignedByte id;
-//	private InetAddress addr;
-//	private Integer port;
 
 	public PeerI(String id, InetAddress addr, Integer port) {
 		this.id = id;

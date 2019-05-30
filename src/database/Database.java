@@ -7,7 +7,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 
-import utils.Utils;
+import util.Utils;
 
 public class Database {
 
@@ -34,7 +34,7 @@ public class Database {
 			DatabaseMetaData meta = c.getMetaData();
 			ResultSet tab = meta.getTables(c.getCatalog(), null, "FILESSTORED", null);
 			boolean tabexists = tab.next();
-			Utils.LOGGER.finest("database exists - " + tabexists);
+			Utils.LOG.finest("database exists - " + tabexists);
 			return tabexists;
 		} catch (SQLException e) {
 			e.printStackTrace();
@@ -46,7 +46,7 @@ public class Database {
 	public void connect() {
 		try {
 			c = DriverManager.getConnection(curl);
-			Utils.LOGGER.finest("onnected to " + db);
+			Utils.LOG.finest("onnected to " + db);
 
 		} catch (SQLException e) {
 			e.printStackTrace();
@@ -68,15 +68,15 @@ public class Database {
 				}
 			}
 			if (!gotSQLExc) {
-				Utils.LOGGER.finest("problem ending connection");
+				Utils.LOG.finest("problem ending connection");
 			}  else  {
-				Utils.LOGGER.finest("connection ended");	
+				Utils.LOG.finest("connection ended");	
 			}  
 		}
 	}
 
 	public void dbload() {
-		String sqlscript = Utils.readFile(initsql);
+		String sqlscript = Utils.read(initsql);
 		runscript(sqlscript);
 	}
 

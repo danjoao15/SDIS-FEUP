@@ -8,8 +8,8 @@ import javax.net.ssl.SSLServerSocket;
 import javax.net.ssl.SSLServerSocketFactory;
 import javax.net.ssl.SSLSocket;
 
-import utils.SingletonThreadPoolExecutor;
-import utils.Utils;
+import util.SingletonThreadPoolExecutor;
+import util.Utils;
 
 public class Server implements Runnable {
 
@@ -39,7 +39,7 @@ public class Server implements Runnable {
 		
 		try {
 			serverSocket = (SSLServerSocket) serverFactory.createServerSocket(this.port_number);
-			Utils.LOGGER.info("Server listening on port " + this.port_number);
+			Utils.LOG.info("Server listening on port " + this.port_number);
 		} catch (IOException e) {
 			e.printStackTrace();
 			return;
@@ -58,7 +58,7 @@ public class Server implements Runnable {
 			try {
 				socket = (SSLSocket) serverSocket.accept();
 			} catch (IOException e) {
-				Utils.LOGGER.warning("Socket closed");
+				Utils.LOG.warning("Socket closed");
 				return;
 			}
 			try {
@@ -104,7 +104,7 @@ public class Server implements Runnable {
 			return null;
 		}
 
-		byte[] readData = new byte[1024 + Utils.MAX_LENGTH_CHUNK];
+		byte[] readData = new byte[1024 + Utils.MAX_CHUNK_SIZE];
 		try {
 			int p = 0;
 			byte l = 'a';

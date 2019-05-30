@@ -1,18 +1,18 @@
-package runnableProtocols;
+package protocols;
 
-import chord.ChordManager;
+import chord.ManageChord;
 import chord.PeerI;
 import communication.Client;
 import communication.MsgFactory;
-import utils.Utils;
+import util.Utils;
 
-public class SendInitDelete implements Runnable{
+public class SendDelete implements Runnable{
 
 	private String senderId;
 	private String fileId;
-	private ChordManager chordManager;
+	private ManageChord chordManager;
 	
-	public SendInitDelete(String fileId, ChordManager chordManager) {
+	public SendDelete(String fileId, ManageChord chordManager) {
 		this.senderId = chordManager.getPeerInfo().getId();
 		this.fileId = fileId;
 		this.chordManager = chordManager;
@@ -22,7 +22,7 @@ public class SendInitDelete implements Runnable{
 	public void run() {
 		PeerI successor = chordManager.getChunkOwner(fileId);
 		String message = MsgFactory.getInitDelete(senderId, fileId);
-		Utils.LOGGER.info("Sending InitDelete for file: " + fileId);
+		Utils.LOG.info("Sending InitDelete for file: " + fileId);
 		Client.sendMessage(successor.getAddr(), successor.getPort(), message, false);
 		System.out.println("Sent request to delete file: " + fileId);
 	}

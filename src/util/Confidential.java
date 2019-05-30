@@ -1,7 +1,7 @@
 /**
  * 
  */
-package utils;
+package util;
 
 import java.nio.charset.StandardCharsets;
 import java.security.NoSuchAlgorithmException;
@@ -11,33 +11,41 @@ import javax.crypto.KeyGenerator;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
 
-public class Confidentiality {
+public class Confidential {
 	private byte[] key;
 
 	private static final String AES = "AES";
 	private static final String AES_ECB_PKCS5Padding = "AES/ECB/PKCS5Padding";
-	public Confidentiality() {
+	public Confidential() {
 		super();
-		KeyGenerator keygen;
+		KeyGenerator generatedKey;
 		try {
-			keygen = KeyGenerator.getInstance(AES);
+			generatedKey = KeyGenerator.getInstance(AES);
 		} catch (NoSuchAlgorithmException e) {
 			e.printStackTrace();
 			return;
 		}
-		SecretKey aesKey = keygen.generateKey();
+		SecretKey aesKey = generatedKey.generateKey();
 		this.setKey(aesKey.getEncoded());
 	}
 
-	public Confidentiality(String encryptKey) {
+	public Confidential(String encryptKey) {
 		this.setKey(encryptKey.getBytes(StandardCharsets.ISO_8859_1));
 	}
 
-	public byte [] encript(byte [] cleartext){
+	public byte[] getKey() {
+		return key;
+	}
+
+	public void setKey(byte[] key) {
+		this.key = key;
+	}
+	
+	public byte [] encriptation(byte [] cleartext){
 		try {
-			SecretKey aux =  new SecretKeySpec(getKey(), AES);
+			SecretKey auxiliarKey  =  new SecretKeySpec(getKey(), AES);
 			Cipher aesCipher = Cipher.getInstance(AES_ECB_PKCS5Padding);
-			aesCipher.init(Cipher.ENCRYPT_MODE, aux);
+			aesCipher.init(Cipher.ENCRYPT_MODE, auxiliarKey );
 
 			return aesCipher.doFinal(cleartext);
 		} catch(Exception e) {
@@ -46,29 +54,15 @@ public class Confidentiality {
 		}
 	}
 
-	public byte [] decrypt(byte[] ciphertext){
+	public byte [] decrypt(byte[] cipherText){
 		try {
-			SecretKey aux =  new SecretKeySpec(getKey(), AES);
+			SecretKey auxiliarKey  =  new SecretKeySpec(getKey(), AES);
 			Cipher aesCipher = Cipher.getInstance(AES_ECB_PKCS5Padding);
-			aesCipher.init(Cipher.DECRYPT_MODE, aux);
-			return aesCipher.doFinal(ciphertext);
+			aesCipher.init(Cipher.DECRYPT_MODE, auxiliarKey );
+			return aesCipher.doFinal(cipherText);
 		} catch(Exception e) {
 			e.printStackTrace();
 			return null;
 		}
-	}
-
-	/**
-	 * @return the key
-	 */
-	public byte[] getKey() {
-		return key;
-	}
-
-	/**
-	 * @param key the key to set
-	 */
-	public void setKey(byte[] key) {
-		this.key = key;
 	}
 }

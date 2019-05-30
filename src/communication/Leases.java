@@ -1,6 +1,3 @@
-/**
- * 
- */
 package communication;
 
 import java.sql.Timestamp;
@@ -10,12 +7,8 @@ import java.util.concurrent.TimeUnit;
 import database.Backup;
 import database.Chunk;
 import database.DBUtils;
-import utils.Utils;
+import util.Utils;
 
-/**
- * @author anabela
- *
- */
 public class Leases implements Runnable {
 
 
@@ -46,7 +39,7 @@ public class Leases implements Runnable {
 			peer.backup(filesToUpdate.get(i).getname(),
 					filesToUpdate.get(i).getrepdegree(),
 					filesToUpdate.get(i).getkey());
-			Utils.LOGGER.info("Lease:Updated file: " + filesToUpdate.get(i));
+			Utils.LOG.info("Lease:Updated file: " + filesToUpdate.get(i));
 		}
 
 	}
@@ -59,11 +52,11 @@ public class Leases implements Runnable {
 		for(int i = 0; i < filesToDelete.size(); i++) {
 			ArrayList<Chunk> allChunks = DBUtils.getAllChunksOfFile(peer.getConnection(), filesToDelete.get(i));
 			allChunks.forEach(chunk -> {
-				Utils.deleteFile(PeerMain.getPath().resolve(chunk.getfile()));
+				Utils.delete(PeerMain.getPath().resolve(chunk.getfile()));
 				PeerMain.decreaseStorageUsed(chunk.getsize());
 			});
-			DBUtils.deleteFile(peer.getConnection(), filesToDelete.get(i));
-			Utils.LOGGER.info("Lease:Deleted file: " + filesToDelete.get(i));
+			DBUtils.delete(peer.getConnection(), filesToDelete.get(i));
+			Utils.LOG.info("Lease:Deleted file: " + filesToDelete.get(i));
 		}
 	}
 

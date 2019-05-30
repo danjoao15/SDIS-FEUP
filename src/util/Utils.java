@@ -1,4 +1,4 @@
-package utils;
+package util;
 
 import java.io.IOException;
 import java.math.BigInteger;
@@ -17,24 +17,22 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.logging.SimpleFormatter;
 
-import chord.ChordManager;
+import chord.ManageChord;
 
 public class Utils {
 	public static final int TIME_MAX_TO_SLEEP = 400;
-	//	public static final String ENCODING_TYPE = "ISO-8859-1";
-	//	USAR - StandardCharsets.ISO_8859_1
-	public static final int MAX_LENGTH_CHUNK = 64000;
+	public static final int MAX_CHUNK_SIZE = 64000;
 	public static final int BYTE_TO_KBYTE = 1000;
 
-	public static Logger LOGGER = Logger.getLogger(Logger.GLOBAL_LOGGER_NAME);
+	public static Logger LOG = Logger.getLogger(Logger.GLOBAL_LOGGER_NAME);
 
 	static {
-		LOGGER.setUseParentHandlers(false);
-		LOGGER.setLevel(Level.ALL);
+		LOG.setUseParentHandlers(false);
+		LOG.setLevel(Level.ALL);
 		try {
-			FileHandler h = new FileHandler("backup_%g_log_%u.log", true);
+			FileHandler h = new FileHandler("backup_%g_log_%u.logging", true);
 			h.setFormatter(new SimpleFormatter());
-			LOGGER.addHandler(h);
+			LOG.addHandler(h);
 		} catch (SecurityException e) {
 			e.printStackTrace();
 		} catch (IOException e) {
@@ -47,21 +45,14 @@ public class Utils {
 		Thread.sleep(r.nextInt(time));
 	}
 
-	/**
-	 * Between two limits, excluding the lower one and including the upper one.
-	 * @param inf
-	 * @param sup
-	 * @param value
-	 * @return True if value is inbetween limits.
-	 */
-	public static boolean inBetween(String inf, String sup, String value) {
+	public static boolean inTheMiddle(String inf, String sup, String value) {
 		BigInteger _inf = new BigInteger(inf,16);
 		BigInteger _sup = new BigInteger(sup,16);
 		BigInteger _value = new BigInteger(value,16);
 
-		BigInteger aux = new BigInteger((Math.pow(2, ChordManager.getM())+"").getBytes());
+		BigInteger aux = new BigInteger((Math.pow(2, ManageChord.getM())+"").getBytes());
 
-		if(_sup.compareTo(_inf) <= 0) { //procura no meio do circulo todo
+		if(_sup.compareTo(_inf) <= 0) {
 			_sup  = _sup.add(aux);
 		}
 		if(_value.compareTo(_inf) < 0) {
@@ -70,37 +61,22 @@ public class Utils {
 		return ((_inf.compareTo(_value) < 0) && (_value.compareTo(_sup) <= 0));
 	}
 	
-	public static String highestId(String id1, String id2) {
+	public static String highest(String id1, String id2) {
 		if (id1 == null) return id2;
 		if (id2 == null) return id1;
 		BigInteger _id1 = new BigInteger(id1,16);
 		BigInteger _id2 = new BigInteger(id2,16);
-		if (_id1.compareTo(_id2) > 0) { //_id1 bigger than _id2
+		if (_id1.compareTo(_id2) > 0) {
 			return id1;
 		}
 		return id2;
 	}
 	
-	public static void log(String message) {
-		LOGGER.info(message);
-		//		The following lists the Log Levels in descending order:
-		//
-		//			SEVERE (highest)
-		//
-		//			WARNING
-		//
-		//			INFO
-		//
-		//			CONFIG
-		//
-		//			FINE
-		//
-		//			FINER
-		//
-		//			FINEST
+	public static void logging(String message) {
+		LOG.info(message);
 	}
 
-	public static String readFile(String filepath) {
+	public static String read(String filepath) {
 		byte[] encoded;
 		try {
 			encoded = Files.readAllBytes(Paths.get(filepath));
@@ -111,8 +87,8 @@ public class Utils {
 		return new String(encoded, StandardCharsets.ISO_8859_1);
 	}
 
-	public static void writeToFile(Path filePath, byte[] body) throws IOException {
-		if(!Files.exists(filePath)) { //NOTE: O CHUNk nao Existe
+	public static void write(Path filePath, byte[] body) throws IOException {
+		if(!Files.exists(filePath)) {
 			Files.createFile(filePath);
 			AsynchronousFileChannel channel = AsynchronousFileChannel.open(filePath,StandardOpenOption.WRITE);
 			CompletionHandler<Integer, ByteBuffer> writter = new CompletionHandler<Integer, ByteBuffer>() {
@@ -137,7 +113,7 @@ public class Utils {
 		}
 	}
 
-	public static void deleteFile(Path filePath) {
+	public static void delete(Path filePath) {
 		try {
 			Files.deleteIfExists(filePath);
 		} catch (IOException e) {

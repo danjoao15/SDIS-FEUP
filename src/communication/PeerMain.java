@@ -15,23 +15,23 @@ import java.util.ArrayList;
 import java.util.Arrays;
 
 import chord.AbstractPeer;
-import chord.ChordManager;
+import chord.ManageChord;
 import database.Backup;
 import database.DBUtils;
 import database.Database;
 import database.Stored;
-import runnableProtocols.SendGetChunk;
-import runnableProtocols.SendInitDelete;
-import runnableProtocols.SendPutChunk;
-import utils.Confidentiality;
-import utils.ReadInput;
-import utils.SingletonThreadPoolExecutor;
-import utils.Utils;
+import protocols.SendGetChunk;
+import protocols.SendDelete;
+import protocols.SendPutChunk;
+import util.Confidential;
+import util.ReadInput;
+import util.SingletonThreadPoolExecutor;
+import util.Utils;
 
 public class PeerMain {
 
 	private static final int LENGTH_OF_CHUNK = 64000;
-	private ChordManager chordManager;
+	private ManageChord chordManager;
 	private Server server;
 	private Database database;
 	private static Path path;
@@ -39,10 +39,7 @@ public class PeerMain {
 	private static int usedStorage = 0;
 
 
-	public PeerMain(ChordManager chordManager, Server server, Database database) {
-		
-		/*System.out.println(chordManager.getPeerInfo().getId() + " "
-		+ new BigInteger(chordManager.getPeerInfo().getId(),16));*/
+	public PeerMain(ManageChord chordManager, Server server, Database database) {
 		
 		this.chordManager = chordManager;
 		this.server = server;
@@ -57,7 +54,7 @@ public class PeerMain {
 			return;
 		}
 		Integer port = Integer.valueOf(args[0]);
-		ChordManager chordManager = new ChordManager(port);
+		ManageChord chordManager = new ManageChord(port);
 		System.out.println("Your ID: " + chordManager.getPeerInfo().getId());
 		generatePath(chordManager.getPeerInfo().getId());
 
@@ -107,45 +104,29 @@ public class PeerMain {
 		SingletonThreadPoolExecutor.getInstance().get().scheduleAtFixedRate(l, 0, Leases.HALF_LEASE_TIME, Leases.LEASE_UNIT);
 	}
 
-	public ChordManager getChordManager() {
+	public ManageChord getChordManager() {
 		return this.chordManager;
 	}
 	public Connection getConnection() {
 		return this.database.getConnection();
 	}
 
-	/**
-	 * Generate a file ID
-	 * @param filename - the filename
-	 * @return Hexadecimal md5 encoded fileID
-	 * @throws IOException, NoSuchAlgorithmException
-	 * */
 	public String getFileID(String filename) throws IOException, NoSuchAlgorithmException {
-		Path filePath = Paths.get(filename); //The filename, not FileID
+		Path filePath = Paths.get(filename);
 		BasicFileAttributes attr = Files.readAttributes(filePath, BasicFileAttributes.class);
 		MessageDigest digest = MessageDigest.getInstance("md5");
 		byte[] hash = digest.digest((filename + attr.lastModifiedTime()).getBytes(StandardCharsets.UTF_8));
-		return Utils.getIdFromHash(hash, ChordManager.getM() / 8);
+		return Utils.getIdFromHash(hash, ManageChord.getM() / 8);
 	}
 
-	/**
-	 * @return the p
-	 */
 	public static Path getPath() {
 		return path;
 	}
 
-	/**
-	 * @param p the p to set
-	 */
 	public static void setPath(Path p) {
 		PeerMain.path = p;
 	}
 
-	/**
-	 * Creates (if necessary) the directory where the chunks are stored
-	 * @param id
-	 */
 	public static void generatePath(String id) {
 		setPath(Paths.get("peer_" + id));
 		if(!Files.exists(getPath())) {
@@ -157,15 +138,10 @@ public class PeerMain {
 		}
 	}
 
-	/**
-	 * Returns false if has space to store the chunk.
-	 * 
-	 * */
 	public static boolean capacityExceeded(int amount) {
 		if(usedStorage + amount > storageCapacity) {
 			return true;
 		}
-		//atualizar espaco usado
 		usedStorage += amount;
 		return false;
 	}
@@ -178,18 +154,18 @@ public class PeerMain {
 		String fileID;
 		try {
 			fileID = this.getFileID(filename);
-			Utils.LOGGER.severe(filename + " - " + fileID);
+			Utils.LOG.severe(filename + " - " + fileID);
 		} catch (NoSuchAlgorithmException | IOException e) {
 			e.printStackTrace();
 			return;
 		}
-		byte[] file = Utils.readFile(filename).getBytes(StandardCharsets.ISO_8859_1);
+		byte[] file = Utils.read(filename).getBytes(StandardCharsets.ISO_8859_1);
 		int n = Math.floorDiv(file.length,LENGTH_OF_CHUNK) + 1;
-		Confidentiality c;
+		Confidential c;
 		if(encryptKey == null) {
-			c = new Confidentiality();
+			c = new Confidential();
 		} else {
-			c = new Confidentiality(encryptKey);
+			c = new Confidential(encryptKey);
 		}
 		encryptKey = new String(c.getKey(), StandardCharsets.ISO_8859_1);
 		Backup backupRequest = new Backup(fileID,filename,encryptKey, degree, n);
@@ -197,20 +173,20 @@ public class PeerMain {
 		int chunkNo = 0;
 		while(file.length > (chunkNo + 1)*LENGTH_OF_CHUNK) {
 			byte[] body = Arrays.copyOfRange(file, chunkNo * LENGTH_OF_CHUNK, (chunkNo + 1) *LENGTH_OF_CHUNK);
-			body = c.encript(body);
+			body = c.encriptation(body);
 			SendPutChunk th = new SendPutChunk(fileID, chunkNo, degree, body, this.getChordManager());
 			SingletonThreadPoolExecutor.getInstance().get().execute(th);
 			chunkNo++;
 		}
 		byte[] body = Arrays.copyOfRange(file, chunkNo * LENGTH_OF_CHUNK, file.length);
-		body = c.encript(body);
+		body = c.encriptation(body);
 		SendPutChunk th = new SendPutChunk(fileID, chunkNo, degree, body, this.getChordManager());
 		SingletonThreadPoolExecutor.getInstance().get().execute(th);
 	}
 
 	public void delete(String fileID) {
 		DBUtils.deleteFileFromBackupsRequested(getConnection(), fileID);
-		SendInitDelete th = new SendInitDelete(fileID,this.getChordManager());
+		SendDelete th = new SendDelete(fileID,this.getChordManager());
 		SingletonThreadPoolExecutor.getInstance().get().execute(th);
 		
 	}
@@ -227,9 +203,6 @@ public class PeerMain {
 		return database;
 	}
 	
-	/**
-	 * When a peer joins, tell him which files he is responsible for.
-	 */
 	public void sendResponsability() {
 		ArrayList<Stored> filesIAmResponsible = DBUtils.getFilesIAmResponsible(this.database.getConnection());
 		ArrayList<Stored> toSend = new ArrayList<Stored> ();
@@ -237,7 +210,7 @@ public class PeerMain {
 		if (predecessor.isNull()) return;
 		if (predecessor.getId().equals(this.chordManager.getPeerInfo().getId())) return;
 		for(int i = 0; i < filesIAmResponsible.size(); i++) {
-			if(Utils.inBetween(this.chordManager.getPeerInfo().getId(), predecessor.getId(), filesIAmResponsible.get(i).getfile())) {
+			if(Utils.inTheMiddle(this.chordManager.getPeerInfo().getId(), predecessor.getId(), filesIAmResponsible.get(i).getfile())) {
 				DBUtils.updateResponsible(this.database.getConnection(),filesIAmResponsible.get(i).getfile(), false);
 				toSend.add(filesIAmResponsible.get(i));
 			}

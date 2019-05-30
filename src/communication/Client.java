@@ -9,7 +9,8 @@ import java.util.Arrays;
 
 import javax.net.ssl.SSLSocket;
 import javax.net.ssl.SSLSocketFactory;
-import utils.Utils;
+
+import util.Utils;
 
 public class Client {
 	private static ArrayList<String> cipher = new ArrayList<String>(Arrays.asList("TLS_DHE_RSA_WITH_AES_128_CBC_SHA"));
@@ -48,10 +49,6 @@ public class Client {
 		return response;
 	}
 
-	/**
-	 * Write to the socket (send message)
-	 * @throws IOException 
-	 */
 	public static void send(String message, SSLSocket socket) throws IOException {
 		byte[] sendData = encode(message.getBytes(StandardCharsets.ISO_8859_1));
 
@@ -83,11 +80,8 @@ public class Client {
 		return a;
 	}
 
-	/**
-	 * Receives the message's response
-	 */
 	public static String getResponse(SSLSocket socket) {
-		byte[] readData = new byte[1024 + Utils.MAX_LENGTH_CHUNK];
+		byte[] readData = new byte[1024 + Utils.MAX_CHUNK_SIZE];
 		InputStream readStream;
 		try {
 			readStream = socket.getInputStream();

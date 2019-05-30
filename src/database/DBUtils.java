@@ -10,7 +10,7 @@ import org.apache.derby.shared.common.error.DerbySQLIntegrityConstraintViolation
 import chord.PeerI;
 import chord.PeerI;
 import communication.Leases;
-import utils.Utils;
+import util.Utils;
 
 public class DBUtils {
 
@@ -46,9 +46,9 @@ public class DBUtils {
 			p.setInt(3, peer.getPort());
 			p.executeUpdate();
 			c.commit();
-			Utils.log("PeerI " + peer.getId() + " has been stored");
+			Utils.logging("PeerI " + peer.getId() + " has been stored");
 		} catch (DerbySQLIntegrityConstraintViolationException e) {
-			Utils.LOGGER.info("Not a new INSERT, updating");
+			Utils.LOG.info("Not a new INSERT, updating");
 			updatePeer(c, peer);
 		} catch (SQLException e) {
 			System.err.println(e.getMessage());
@@ -62,7 +62,7 @@ public class DBUtils {
 			p.setString(3, peer.getId());
 			p.executeUpdate();
 			c.commit();
-			Utils.log("PeerI " + peer.getId() + " has been updated");
+			Utils.logging("PeerI " + peer.getId() + " has been updated");
 		} catch (SQLException e) {
 			System.err.println(e.getMessage());
 		}
@@ -88,7 +88,7 @@ public class DBUtils {
 			c.commit();
 			System.out.println("File " + fileInfo.getfile() + " has been stored in database");
 		} catch (DerbySQLIntegrityConstraintViolationException e) {
-			Utils.LOGGER.info("Not a new INSERT, updating");
+			Utils.LOG.info("Not a new INSERT, updating");
 			updateStoredFile(c, fileInfo);
 		} catch (SQLException e) {
 			System.err.println(e.getMessage());
@@ -114,7 +114,7 @@ public class DBUtils {
 
 			p.executeUpdate();
 			c.commit();
-			Utils.log("File " + fileInfo.getfile() + " has been updated");
+			Utils.logging("File " + fileInfo.getfile() + " has been updated");
 		} catch (SQLException e) {
 			System.err.println(e.getMessage());
 		}
@@ -146,7 +146,7 @@ public class DBUtils {
 			p.setInt(4, chunkInfo.getsize());
 			p.executeUpdate();
 			c.commit();
-			Utils.log("Chunk " + chunkInfo.getfileid() + ":" + chunkInfo.getchunkid() + " has been stored");
+			Utils.logging("Chunk " + chunkInfo.getfileid() + ":" + chunkInfo.getchunkid() + " has been stored");
 		} catch (DerbySQLIntegrityConstraintViolationException e) {
 			updateStoredChunkRepDegree(c,chunkInfo);
 		} catch (SQLException e) {
@@ -154,8 +154,6 @@ public class DBUtils {
 		}
 	}
 	public static void updateStoredChunkRepDegree(Connection c, Chunk chunkInfo) {
-		//"UPDATE CHUNKSSTORED SET actual_rep_degree = ? WHERE file_id = ? AND chunk_id = ?"
-
 		try {
 			PreparedStatement p = c.prepareStatement(updateChunkStoredRepDegree);
 			p.setInt(1, chunkInfo.getrepdegree());
@@ -163,7 +161,7 @@ public class DBUtils {
 			p.setString(3, chunkInfo.getfileid());
 			p.executeUpdate();
 			c.commit();
-			Utils.log("Chunk " + chunkInfo.getfileid() + ":" + chunkInfo.getchunkid() + " has been updated");
+			Utils.logging("Chunk " + chunkInfo.getfileid() + ":" + chunkInfo.getchunkid() + " has been updated");
 		} catch (SQLException e) {
 			System.err.println(e.getMessage());
 		}
@@ -175,7 +173,7 @@ public class DBUtils {
 			p.setString(2, backupReq.getid());
 			p.executeUpdate();
 			c.commit();
-			Utils.log("Backup: " + backupReq.getid() + " has been updated");
+			Utils.logging("Backup: " + backupReq.getid() + " has been updated");
 		} catch (SQLException e) {
 			System.err.println(e.getMessage());
 		}
@@ -196,7 +194,6 @@ public class DBUtils {
 	public static void insertBackupRequested(Connection c, Backup backupRequest) {
 		Boolean wasRequested = wasBackupRequestedBefore(c, backupRequest.getid());
 		if (!wasRequested) {
-			// Create New
 			try {
 				PreparedStatement p = c.prepareStatement(insertBackupRequested);
 				p.setString(1, backupRequest.getid());
@@ -210,12 +207,11 @@ public class DBUtils {
 				p.setInt(5, backupRequest.getchunksnumber());
 				p.executeUpdate();
 				c.commit();
-				Utils.log("Backup for file " + backupRequest.getname() + " has been stored");
+				Utils.logging("Backup for file " + backupRequest.getname() + " has been stored");
 			} catch (SQLException e) {
 				System.err.println(e.getMessage());
 			}
 		} else {
-			// Update old
 			updateBackupRequested(c,backupRequest);
 		}
 
@@ -396,7 +392,7 @@ public class DBUtils {
 		}
 		return chunksInfo;
 	}
-	public static void deleteFile(Connection c, String fileId) {
+	public static void delete(Connection c, String fileId) {
 		try {
 			PreparedStatement p = c.prepareStatement(deleteFileStored);
 			p.setString(1, fileId);

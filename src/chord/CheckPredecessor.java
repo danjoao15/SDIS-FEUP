@@ -2,32 +2,32 @@ package chord;
 
 import communication.Client;
 import communication.MsgFactory;
-import utils.Utils;
+import util.Utils;
 
 public class CheckPredecessor implements Runnable {
 
-	private ChordManager chordManager;
+	private ManageChord chordmanage;
 	
-	CheckPredecessor(ChordManager chordManager){
-		this.chordManager =  chordManager;
+	CheckPredecessor(ManageChord chordmanage){
+		this.chordmanage =  chordmanage;
 	}
 	
 	@Override
 	public void run() {
 		try {
-			AbstractPeer predecessor = chordManager.getPredecessor();
-			String myPeerId = chordManager.getPeerInfo().getId();
+			AbstractPeer predecessor = chordmanage.getPredecessor();
+			String myPeerId = chordmanage.getPeerInfo().getId();
 			if (predecessor.isNull()) {
-				Utils.LOGGER.warning("Predecessor not set");
+				Utils.LOG.warning("Predecessor not set");
 				return;
 			}
-			Utils.LOGGER.info("My predecessor is " + predecessor.getId());
+			Utils.LOG.info("My predecessor is " + predecessor.getId());
 			if (predecessor.getId().equals(myPeerId)) return;
 			String pingMessage = MsgFactory.getPing(myPeerId);
 			String response = Client.sendMessage(predecessor.getAddr(), predecessor.getPort(), pingMessage, true);
 			if (response == null) {
-				Utils.LOGGER.finest("Could not establish connection with predecessor");
-				chordManager.setPredecessor(new NullPeer());
+				Utils.LOG.finest("Could not establish connection with predecessor");
+				chordmanage.setPredecessor(new NullPeer());
 			}	
 		}catch (Exception e) {
 			e.printStackTrace();
