@@ -29,7 +29,7 @@ import database.Stored;
 import util.Confidential;
 import util.Utils;
 
-public class ParseMessageAndSendResponse implements Runnable {
+public class HandleMessage implements Runnable {
 
 	private byte[] readData;
 	private SSLSocket socket;
@@ -38,7 +38,7 @@ public class ParseMessageAndSendResponse implements Runnable {
 	private String myPeerID;
 
 
-	public ParseMessageAndSendResponse(PeerMain peer, byte[] readData, SSLSocket socket) {
+	public HandleMessage(PeerMain peer, byte[] readData, SSLSocket socket) {
 		super();
 		this.readData = readData;
 		this.socket = socket;

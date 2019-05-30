@@ -57,7 +57,7 @@ public class Server implements Runnable {
 
 			byte[] readData = readSocket(socket);
 
-			ParseMessageAndSendResponse p = new ParseMessageAndSendResponse(getPeer(), readData, socket);
+			HandleMessage p = new HandleMessage(getPeer(), readData, socket);
 			
 			SingletonThreadPoolExecutor.getInstance().get().execute(p);	
 		}

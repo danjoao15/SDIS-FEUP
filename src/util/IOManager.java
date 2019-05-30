@@ -25,35 +25,35 @@ public class IOManager{
 			System.out.println("\t1. Backup File");
 			System.out.println("\t2. Restore File");
 			System.out.println("\t3. Delete File");
-			Scanner scanner = new Scanner(System.in);
-			Integer op = null;
+			Scanner scan = new Scanner(System.in);
+			Integer option = null;
 			try {
-				op = scanner.nextInt();
+				option = scan.nextInt();
 			}catch(InputMismatchException e) {
-				System.out.println("Invalid Input");
-				scanner.nextLine();
+				System.out.println("Invalid Option");
+				scan.nextLine();
 				continue;
 			}
-			switch (op) {
+			switch (option) {
 			case 0:{
-				scanner.close();
+				scan.close();
 				Thread.currentThread().interrupt();
 				return;
 			}
 			case 1:{
-				IOManager.backupOption(scanner, peer);
+				IOManager.backup(scan, peer);
 				break;
 			}
 			case 2:{
-				IOManager.restoreOption(scanner, peer);
+				IOManager.restore(scan, peer);
 				break;
 			}
 			case 3:{
-				IOManager.deleteOption(scanner, peer);
+				IOManager.delete(scan, peer);
 				break;
 			}
 			default: {
-				System.out.println("Error: Invalid input!");
+				System.out.println("Invalid Option!");
 				continue;
 			}
 			}
@@ -61,74 +61,74 @@ public class IOManager{
 		
 	}
 	
-	private static void restoreOption(Scanner scanner, PeerMain peer) {
-		ArrayList<Backup> allRequests = DatabaseManager.getRequestedBackups(peer.getConnection());
-		if (allRequests.size() > 0) {
+	private static void restore(Scanner scan, PeerMain peer) {
+		ArrayList<Backup> requests = DatabaseManager.getRequestedBackups(peer.getConnection());
+		if (requests.size() > 0) {
 			int option = -1;
 			do {
-				System.out.println("Choose a file to restore:");
-				for (int i = 0; i < allRequests.size(); i++) {
-					System.out.println(i + ". " + allRequests.get(i).getname() + " -> " + allRequests.get(i).getid());
+				System.out.println("Choose the file you want to restore:");
+				for (int i = 0; i < requests.size(); i++) {
+					System.out.println(i + ". " + requests.get(i).getname() + " -> " + requests.get(i).getid());
 				}
 				try {
-					option = scanner.nextInt();
+					option = scan.nextInt();
 				}catch(InputMismatchException e) {
 					System.out.println("Invalid Input");
-					scanner.nextLine();
+					scan.nextLine();
 				}
-			} while(option < 0 && option >= allRequests.size());
-			peer.restore(allRequests.get(option));
+			} while(option < 0 && option >= requests.size());
+			peer.restore(requests.get(option));
 		} else {
-			System.out.println("You must backup files before restoring");
+			System.out.println("Backup your files before restoring");
 		}
 	}
 	
-	private static void deleteOption(Scanner scanner, PeerMain peer) {
-		ArrayList<Backup> allRequests = DatabaseManager.getRequestedBackups(peer.getConnection());
-		if (allRequests.size() > 0) {
+	private static void delete(Scanner scan, PeerMain peer) {
+		ArrayList<Backup> requests = DatabaseManager.getRequestedBackups(peer.getConnection());
+		if (requests.size() > 0) {
 			int option = -1;
 			do {
-				System.out.println("Choose a file to delete:");
-				for (int i = 0; i < allRequests.size(); i++) {
-					System.out.println(i + ". " + allRequests.get(i).getname() + " -> " + allRequests.get(i).getid());
+				System.out.println("Choose the file you want to delete:");
+				for (int i = 0; i < requests.size(); i++) {
+					System.out.println(i + ". " + requests.get(i).getname() + " - " + requests.get(i).getid());
 				}
 				try {
-					option = scanner.nextInt();
+					option = scan.nextInt();
 				}catch(InputMismatchException e) {
-					System.out.println("Invalid Input");
-					scanner.nextLine();
+					System.out.println("Invalid Option");
+					scan.nextLine();
 				}
-			} while(option < 0 || option >= allRequests.size());
-			peer.delete(allRequests.get(option).getid());
+			} while(option < 0 || option >=requests.size());
+			peer.delete(requests.get(option).getid());
 			
 		} else {
-			System.out.println("You must backup files before deleting");
+			System.out.println("Backup your files before deleting");
 		}
 		
 
 	}
 
-	private static void backupOption(Scanner in, PeerMain peer) {
+	private static void backup(Scanner scan, PeerMain peer) {
 		System.out.println("FileName:");
-		String filename;
-		filename = in.next();
-		if(!Files.exists(Paths.get(filename))) {
-			System.out.println("Error: That file does not exist!");
+		String name;
+		name = scan.next();
+		if(!Files.exists(Paths.get(name))) {
+			System.out.println("The file does not exist!");
 			return;
 		}
-		Integer degree = 0;
+		Integer deg = 0;
 		do {
-			System.out.println("Replication Degree (From 1-8):");
+			System.out.println("Choose your Replication Degree (1-8):");
 			try {
-				degree = in.nextInt();
+				deg = scan.nextInt();
 			}catch(InputMismatchException e) {
-				System.out.println("Invalid Input");
-				in.nextLine();
+				System.out.println("Invalid Replication Degree");
+				scan.nextLine();
 			}
-		} while((degree < 1) || (degree > 9));
+		} while((deg < 1) || (deg > 9));
 			
-		peer.backup(filename, degree,null);
-		System.out.println("Called Backup!");
+		peer.backup(name, deg,null);
+		System.out.println("Request to Backup sent!");
 	}
 	
 
