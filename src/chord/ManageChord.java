@@ -76,7 +76,7 @@ public class ManageChord implements Runnable {
 		CheckPredecessor checkPredecessorThread = new CheckPredecessor(this);
 		SingletonThreadPoolExecutor.getInstance().get().scheduleAtFixedRate(checkPredecessorThread, 1000, 10000, TimeUnit.MILLISECONDS);
 
-		FingerTableFix fixFingerTableThread = new FingerTableFix(this);
+		FingerTableFixer fixFingerTableThread = new FingerTableFixer(this);
 		SingletonThreadPoolExecutor.getInstance().get().scheduleAtFixedRate(fixFingerTableThread, 2000, 5000, TimeUnit.MILLISECONDS);
 
 	}
@@ -242,7 +242,7 @@ public class ManageChord implements Runnable {
 		nextPeers.pop();
 		this.getFingerTable().set(0,nextPeers.peekFirst());
 		try {
-			String keyToLookup = FingerTableFix.getKey(this.getPeerInfo().getId(), 0);
+			String keyToLookup = FingerTableFixer.getKey(this.getPeerInfo().getId(), 0);
 			String lookupMessage = MsgFactory.getLookup(this.getPeerInfo().getId(), keyToLookup);
 			String response = this.lookup(keyToLookup);
 			response = response.trim();

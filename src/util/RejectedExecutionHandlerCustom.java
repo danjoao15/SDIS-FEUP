@@ -6,7 +6,7 @@ import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
-public class MyRejectedExecutionHandler implements RejectedExecutionHandler{
+public class RejectedExecutionHandlerCustom implements RejectedExecutionHandler{
 
 	@Override
 	public void rejectedExecution(Runnable subprotocol, ThreadPoolExecutor thread) {

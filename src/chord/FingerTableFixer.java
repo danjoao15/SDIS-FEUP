@@ -8,14 +8,14 @@ import communication.MsgType;
 import util.Utils;
 
 
-public class FingerTableFix implements Runnable {
+public class FingerTableFixer implements Runnable {
 
 	private ManageChord chord;
 	
 	
 	@Override
 	public void run() {
-		Utils.LOG.info("Running fix finger table");
+		Utils.LOG.info("Running Fingertable Fixer");
 		fixFT();
 	}
 
@@ -61,7 +61,7 @@ public class FingerTableFix implements Runnable {
 		Utils.LOG.finest("Tabela de dedos: " + chord.getPeerInfo().getId() + "\n" + m);
 	}
 	
-	public FingerTableFix(ManageChord chord) {
+	public FingerTableFixer(ManageChord chord) {
 		this.chord = chord;
 	}
 }

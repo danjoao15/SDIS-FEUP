@@ -10,11 +10,11 @@ import communication.PeerMain;
 import database.Backup;
 import database.DBUtils;
 
-public class ReadInput{
+public class IOManager{
 
 	private PeerMain peer;
 	
-	public ReadInput(PeerMain peer){
+	public IOManager(PeerMain peer){
 		this.peer = peer;
 	}
 	
@@ -41,19 +41,19 @@ public class ReadInput{
 				return;
 			}
 			case 1:{
-				ReadInput.backupOption(scanner, peer);
+				IOManager.backupOption(scanner, peer);
 				break;
 			}
 			case 2:{
-				ReadInput.restoreOption(scanner, peer);
+				IOManager.restoreOption(scanner, peer);
 				break;
 			}
 			case 3:{
-				ReadInput.deleteOption(scanner, peer);
+				IOManager.deleteOption(scanner, peer);
 				break;
 			}
 			default: {
-				System.out.println("Error: That's not a valid input!");
+				System.out.println("Error: Invalid input!");
 				continue;
 			}
 			}
