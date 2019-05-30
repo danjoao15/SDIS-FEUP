@@ -15,7 +15,6 @@ public class Server implements Runnable {
 
 	public static final int MAX_LENGTH_PACKET = 300;
 
-	private ArrayList<String> cipher_list;
 	private int port_number;
 	private PeerMain peer = null;
 	private SSLServerSocket serverSocket;
@@ -25,12 +24,6 @@ public class Server implements Runnable {
 		this.port_number = port;
 
 		setSystemProperties();
-
-		/*this.cipher_list = new ArrayList<String>();
-
-		for (int i = 1; i < cipher_suite.length; i++) {
-			this.cipher_list.add(cipher_suite[i]);
-		}*/
 	}
 
 	@Override
@@ -44,14 +37,9 @@ public class Server implements Runnable {
 			e.printStackTrace();
 			return;
 		}
-		/*String[] a = serverSocket.getEnabledCipherSuites();
-		for(String b: a) {
-			System.out.println(b);
-		}*/
 		serverSocket.setNeedClientAuth(true);
 		serverSocket.setEnabledProtocols(serverSocket.getSupportedProtocols());
 
-		//this.cipher_list.toArray(new String[0]);
 
 		while (true) {
 			SSLSocket socket;
@@ -92,9 +80,6 @@ public class Server implements Runnable {
 		System.setProperty("javax.net.ssl.trustStorePassword", "123456");
 	}
 
-	/**
-	 * Read socket
-	 */
 	public byte[] readSocket(SSLSocket socket) {
 		InputStream readStream;
 		try {
@@ -126,16 +111,10 @@ public class Server implements Runnable {
 		return readData;
 	}
 
-	/**
-	 * @return the peer
-	 */
 	public PeerMain getPeer() {
 		return peer;
 	}
 
-	/**
-	 * @param peer the peer to set
-	 */
 	public void setPeer(PeerMain peer) {
 		this.peer = peer;
 	}

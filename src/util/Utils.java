@@ -109,7 +109,7 @@ public class Utils {
 			src.flip();
 			channel.write(src, 0, src, writter);
 		} else {
-			System.out.println("File already exists");
+			System.out.println("File may exist already.");
 		}
 	}
 

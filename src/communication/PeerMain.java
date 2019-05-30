@@ -24,7 +24,7 @@ import protocols.SendGetChunk;
 import protocols.SendDelete;
 import protocols.SendPutChunk;
 import util.Confidential;
-import util.ReadInput;
+import util.IOManager;
 import util.SingletonThreadPoolExecutor;
 import util.Utils;
 
@@ -83,7 +83,7 @@ public class PeerMain {
 		}
 		peer.joinNetwork(addr, port);
 		
-		ReadInput readInputThread = new ReadInput(peer);
+		IOManager readInputThread = new IOManager(peer);
 		readInputThread.run();
 		server.closeConnection();
 		peer.getDatabase().endConnection();

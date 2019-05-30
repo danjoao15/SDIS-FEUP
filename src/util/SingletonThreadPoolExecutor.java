@@ -9,7 +9,7 @@ public class SingletonThreadPoolExecutor {
 	
 	
 	protected SingletonThreadPoolExecutor() {
-		RejectedExecutionHandler handler = new MyRejectedExecutionHandler();
+		RejectedExecutionHandler handler = new RejectedExecutionHandlerCustom();
 		thread = new ScheduledThreadPoolExecutor(Runtime.getRuntime().availableProcessors(), handler);
 	}
 

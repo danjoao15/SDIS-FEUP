@@ -227,7 +227,7 @@ public class DBUtils {
 			if (result.next()) {
 				return result.getBoolean("i_am_responsible");
 			}
-			System.out.println("amIResponsible: file not found");
+			System.out.println("File not found");
 
 		} catch (SQLException e) {
 			e.printStackTrace();
