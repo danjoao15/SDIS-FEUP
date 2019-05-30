@@ -236,7 +236,7 @@ public class HandleMessage implements Runnable {
 
 		Chunk chunkInfo = new Chunk(chunkNo, fileID);
 		if(DatabaseManager.checkChunkStored(dbConnection, chunkInfo )) {
-			String body = Loggs.read(PeerMain.getPath().resolve(chunkInfo.getfile()).toString());
+			String body = Loggs.read(PeerMain.getPath().resolve(chunkInfo.getinfo()).toString());
 			String msg = CreateMsg.getChunk(this.myPeerID, fileID, chunkNo, body.getBytes(StandardCharsets.ISO_8859_1));
 			Client.sendMsg(address, port, msg, false);
 		} else {
@@ -254,7 +254,7 @@ public class HandleMessage implements Runnable {
 		if (isFileStored) {
 			ArrayList<Chunk> chunks = DatabaseManager.getFileChunks(dbConnection, file);
 			chunks.forEach(chunk -> {
-				Loggs.delete(PeerMain.getPath().resolve(chunk.getfile()));
+				Loggs.delete(PeerMain.getPath().resolve(chunk.getinfo()));
 				PeerMain.decreaseStorageUsed(chunk.getsize());
 			});
 			DatabaseManager.deleteFile(dbConnection, file);

@@ -11,50 +11,56 @@ import util.Loggs;
 
 public class Database {
 
-
+	private String db = "localDB";
+	private String initsql = "launchdatabase.sql";
 	private String driver = "org.apache.derby.jdbc.EmbeddedDriver";
-	private String db="localDB";
 	private String curl = "jdbc:derby:" + db + ";create=true";
-	private String initsql = "initDB.sql";
-
+	
 	private Connection c = null;
 
-
 	public Database(String s){
-		db = "localDB"+s;
+		db = "localDB" + s;
 		curl = "jdbc:derby:" + db + ";create=true";
 		connect();
 		if (!dbexists()) {
 			dbload();
+			System.out.println("database for " + s + " created");
 		}
-
+		else {
+			System.out.println("database for " + s + " already exists");
+		}
 	}
+	
 	private boolean dbexists() {
 		try {
 			DatabaseMetaData meta = c.getMetaData();
 			ResultSet tab = meta.getTables(c.getCatalog(), null, "FILESSTORED", null);
 			boolean tabexists = tab.next();
-			Loggs.LOG.finest("database exists - " + tabexists);
+			if(tabexists) {
+				Loggs.LOG.finest("database exists");
+			}
+			else {
+				Loggs.LOG.finest("database does not yet exist");
+			}
 			return tabexists;
 		} catch (SQLException e) {
 			e.printStackTrace();
 		}
 		return false;
-
+	}
+	
+	public void dbload() {
+		String script = Loggs.read(initsql);
+		runscript(script);
 	}
 
 	public void connect() {
 		try {
 			c = DriverManager.getConnection(curl);
-			Loggs.LOG.finest("onnected to " + db);
-
+			Loggs.LOG.finest("connected to " + this.db);
 		} catch (SQLException e) {
 			e.printStackTrace();
 		}  	
-	}
-
-	public Connection getConnection() {
-		return c;
 	}
 
 	public void endConnection() {
@@ -67,17 +73,13 @@ public class Database {
 					gotSQLExc = true;
 				}
 			}
-			if (!gotSQLExc) {
-				Loggs.LOG.finest("problem ending connection");
-			}  else  {
+			if (gotSQLExc) {
 				Loggs.LOG.finest("connection ended");	
+			}
+			else  {
+				Loggs.LOG.finest("problem ending connection");
 			}  
 		}
-	}
-
-	public void dbload() {
-		String sqlscript = Loggs.read(initsql);
-		runscript(sqlscript);
 	}
 
 	private void runscript(String script) {
@@ -94,4 +96,9 @@ public class Database {
 			e.printStackTrace();
 		}	
 	}
+
+	public Connection getConnection() {
+		return c;
+	}
+
 }

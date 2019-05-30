@@ -29,6 +29,10 @@ public class Stored {
 	public String getpeer() {
 		return peer;
 	}
+	
+	public Integer getrepdegree() {
+		return this.repdegree;
+	}
 
 	public void setpeer(String peer) {
 		this.peer = peer;
@@ -36,10 +40,6 @@ public class Stored {
 
 	public void setrepdegree(int repdegree) {
 		this.repdegree = repdegree;
-	}
-	
-	public Integer getrepdegree() {
-		return this.repdegree;
 	}
 
 	

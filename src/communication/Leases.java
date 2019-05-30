@@ -52,7 +52,7 @@ public class Leases implements Runnable {
 		for(int i = 0; i < filesToDelete.size(); i++) {
 			ArrayList<Chunk> allChunks = DatabaseManager.getFileChunks(peer.getConnection(), filesToDelete.get(i));
 			allChunks.forEach(chunk -> {
-				Loggs.delete(PeerMain.getPath().resolve(chunk.getfile()));
+				Loggs.delete(PeerMain.getPath().resolve(chunk.getinfo()));
 				PeerMain.decreaseStorageUsed(chunk.getsize());
 			});
 			DatabaseManager.deleteFile(peer.getConnection(), filesToDelete.get(i));

@@ -25,25 +25,26 @@ public class Chunk {
 	public String getfileid() {
 		return file;
 	}
-
+	
 	public Integer getrepdegree() {
 		return repdegree;
+	}
+	
+	public Integer getsize() {
+		return size;
+	}
+		
+	public String getinfo() {
+		return file + "_" + id;
 	}
 
 	public void setrepdegree(Integer repdegree) {
 		this.repdegree = repdegree;
-	}
-	
-	public String getfile() {
-		return file + "_" + id;
 	}
 
 	public void setsize(Integer size) {
 		this.size = size;
 	}
 	
-	public Integer getsize() {
-		return size;
-	}
-	
+
 }
