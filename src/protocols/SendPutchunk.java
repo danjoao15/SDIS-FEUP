@@ -6,7 +6,7 @@ import communication.CreateMsg;
 import chord.ManageChord;
 import chord.PeerI;
 
-public class SendPutChunk implements Runnable {
+public class SendPutchunk implements Runnable {
 
 	private String IDsender = null;
 	private String IDfile= null;
@@ -15,7 +15,7 @@ public class SendPutChunk implements Runnable {
 	private byte[] body = null;
 	private ManageChord chord = null;
 
-	public SendPutChunk (String IDfile, int nChunk, int repDeg, byte[] body, ManageChord chord) {
+	public SendPutchunk (String IDfile, int nChunk, int repDeg, byte[] body, ManageChord chord) {
 		this.IDsender = chord.getPeerInfo().getId();
 		this.IDfile = IDfile;
 		this.nChunk = nChunk;

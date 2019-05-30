@@ -6,13 +6,13 @@ import communication.Client;
 import communication.CreateMsg;
 import database.Backup;
 
-public class SendGetChunk implements Runnable {
+public class SendGetchunk implements Runnable {
 
 	Backup request;
 	int nChunk;
 	ManageChord chord;
 
-	public SendGetChunk(Backup backupRequest, int nChunk, ManageChord chord) {
+	public SendGetchunk(Backup backupRequest, int nChunk, ManageChord chord) {
 		super();
 		this.request = backupRequest;
 		this.nChunk = nChunk;

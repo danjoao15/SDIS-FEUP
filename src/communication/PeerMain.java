@@ -20,9 +20,9 @@ import database.Backup;
 import database.DatabaseManager;
 import database.Database;
 import database.Stored;
-import protocols.SendGetChunk;
+import protocols.SendGetchunk;
 import protocols.SendIDelete;
-import protocols.SendPutChunk;
+import protocols.SendPutchunk;
 import util.Confidential;
 import util.IOManager;
 import util.SingletonThreadPoolExecutor;
@@ -174,13 +174,13 @@ public class PeerMain {
 		while(file.length > (chunkNo + 1)*LENGTH_OF_CHUNK) {
 			byte[] body = Arrays.copyOfRange(file, chunkNo * LENGTH_OF_CHUNK, (chunkNo + 1) *LENGTH_OF_CHUNK);
 			body = c.encriptation(body);
-			SendPutChunk th = new SendPutChunk(fileID, chunkNo, degree, body, this.getChordManager());
+			SendPutchunk th = new SendPutchunk(fileID, chunkNo, degree, body, this.getChordManager());
 			SingletonThreadPoolExecutor.getInstance().get().execute(th);
 			chunkNo++;
 		}
 		byte[] body = Arrays.copyOfRange(file, chunkNo * LENGTH_OF_CHUNK, file.length);
 		body = c.encriptation(body);
-		SendPutChunk th = new SendPutChunk(fileID, chunkNo, degree, body, this.getChordManager());
+		SendPutchunk th = new SendPutchunk(fileID, chunkNo, degree, body, this.getChordManager());
 		SingletonThreadPoolExecutor.getInstance().get().execute(th);
 	}
 
@@ -194,7 +194,7 @@ public class PeerMain {
 	public void restore(Backup backupRequest) {
 		Integer totalNumChunks = backupRequest.getchunksnumber();
 		for(int i = 0; i < totalNumChunks; i++) {
-			SendGetChunk th = new SendGetChunk(backupRequest, i,this.getChordManager());
+			SendGetchunk th = new SendGetchunk(backupRequest, i,this.getChordManager());
 			SingletonThreadPoolExecutor.getInstance().get().execute(th);
 		}
 	}
