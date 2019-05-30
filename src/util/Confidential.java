@@ -54,7 +54,7 @@ public class Confidential {
 		}
 	}
 
-	public byte [] decrypt(byte[] cipherText){
+	public byte [] decryptation(byte[] cipherText){
 		try {
 			SecretKey auxiliarKey  =  new SecretKeySpec(getKey(), AES);
 			Cipher aesCipher = Cipher.getInstance(AES_ECB_PKCS5Padding);

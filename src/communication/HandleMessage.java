@@ -182,7 +182,7 @@ public class HandleMessage implements Runnable {
 		
 		Confidential conf = new Confidential(b.getkey());
 		
-		body_bytes = conf.decrypt(body_bytes);
+		body_bytes = conf.decryptation(body_bytes);
 		Path filepath = PeerMain.getPath().resolve("restoreFile-" + b.getname());
 
 		try {
