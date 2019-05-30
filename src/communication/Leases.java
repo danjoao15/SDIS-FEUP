@@ -7,7 +7,7 @@ import java.util.concurrent.TimeUnit;
 import database.Backup;
 import database.Chunk;
 import database.DatabaseManager;
-import util.Utils;
+import util.Loggs;
 
 public class Leases implements Runnable {
 
@@ -39,7 +39,7 @@ public class Leases implements Runnable {
 			peer.backup(filesToUpdate.get(i).getname(),
 					filesToUpdate.get(i).getrepdegree(),
 					filesToUpdate.get(i).getkey());
-			Utils.LOG.info("Lease:Updated file: " + filesToUpdate.get(i));
+			Loggs.LOG.info("Lease:Updated file: " + filesToUpdate.get(i));
 		}
 
 	}
@@ -52,11 +52,11 @@ public class Leases implements Runnable {
 		for(int i = 0; i < filesToDelete.size(); i++) {
 			ArrayList<Chunk> allChunks = DatabaseManager.getFileChunks(peer.getConnection(), filesToDelete.get(i));
 			allChunks.forEach(chunk -> {
-				Utils.delete(PeerMain.getPath().resolve(chunk.getfile()));
+				Loggs.delete(PeerMain.getPath().resolve(chunk.getfile()));
 				PeerMain.decreaseStorageUsed(chunk.getsize());
 			});
 			DatabaseManager.deleteFile(peer.getConnection(), filesToDelete.get(i));
-			Utils.LOG.info("Lease:Deleted file: " + filesToDelete.get(i));
+			Loggs.LOG.info("Lease:Deleted file: " + filesToDelete.get(i));
 		}
 	}
 

@@ -5,7 +5,7 @@ import java.math.BigInteger;
 import communication.Client;
 import communication.CreateMsg;
 import communication.MsgType;
-import util.Utils;
+import util.Loggs;
 
 
 public class FingerTableFixer implements Runnable {
@@ -15,7 +15,7 @@ public class FingerTableFixer implements Runnable {
 	
 	@Override
 	public void run() {
-		Utils.LOG.info("Running Fingertable Fixer");
+		Loggs.LOG.info("Running Fingertable Fixer");
 		fixFT();
 	}
 
@@ -58,7 +58,7 @@ public class FingerTableFixer implements Runnable {
 		for (int i = 0; i < chord.getFingerTable().size(); i++) {
 			m += "\t" + chord.getFingerTable().get(i).getId() + "\n";
 		}
-		Utils.LOG.finest("Tabela de dedos: " + chord.getPeerInfo().getId() + "\n" + m);
+		Loggs.LOG.finest("Tabela de dedos: " + chord.getPeerInfo().getId() + "\n" + m);
 	}
 	
 	public FingerTableFixer(ManageChord chord) {

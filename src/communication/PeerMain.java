@@ -26,7 +26,7 @@ import protocols.SendPutchunk;
 import util.Confidential;
 import util.IOManager;
 import util.SingletonThreadPoolExecutor;
-import util.Utils;
+import util.Loggs;
 
 public class PeerMain {
 
@@ -116,7 +116,7 @@ public class PeerMain {
 		BasicFileAttributes attr = Files.readAttributes(filePath, BasicFileAttributes.class);
 		MessageDigest digest = MessageDigest.getInstance("md5");
 		byte[] hash = digest.digest((filename + attr.lastModifiedTime()).getBytes(StandardCharsets.UTF_8));
-		return Utils.getIdFromHash(hash, ManageChord.getM() / 8);
+		return Loggs.getIdFromHash(hash, ManageChord.getM() / 8);
 	}
 
 	public static Path getPath() {
@@ -154,12 +154,12 @@ public class PeerMain {
 		String fileID;
 		try {
 			fileID = this.getFileID(filename);
-			Utils.LOG.severe(filename + " - " + fileID);
+			Loggs.LOG.severe(filename + " - " + fileID);
 		} catch (NoSuchAlgorithmException | IOException e) {
 			e.printStackTrace();
 			return;
 		}
-		byte[] file = Utils.read(filename).getBytes(StandardCharsets.ISO_8859_1);
+		byte[] file = Loggs.read(filename).getBytes(StandardCharsets.ISO_8859_1);
 		int n = Math.floorDiv(file.length,LENGTH_OF_CHUNK) + 1;
 		Confidential c;
 		if(encryptKey == null) {
@@ -210,7 +210,7 @@ public class PeerMain {
 		if (predecessor.isNull()) return;
 		if (predecessor.getId().equals(this.chordManager.getPeerInfo().getId())) return;
 		for(int i = 0; i < filesIAmResponsible.size(); i++) {
-			if(Utils.inTheMiddle(this.chordManager.getPeerInfo().getId(), predecessor.getId(), filesIAmResponsible.get(i).getfile())) {
+			if(Loggs.inTheMiddle(this.chordManager.getPeerInfo().getId(), predecessor.getId(), filesIAmResponsible.get(i).getfile())) {
 				DatabaseManager.updateResponsible(this.database.getConnection(),filesIAmResponsible.get(i).getfile(), false);
 				toSend.add(filesIAmResponsible.get(i));
 			}

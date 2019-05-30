@@ -3,7 +3,7 @@ package chord;
 import communication.Client;
 import communication.CreateMsg;
 import communication.MsgType;
-import util.Utils;
+import util.Loggs;
 
 public class Stabilize implements Runnable {
 	private ManageChord chordManager;
@@ -29,12 +29,12 @@ public class Stabilize implements Runnable {
 	public void run() {
 		try {
 			String myPeerId = this.chordManager.getPeerInfo().getId();
-			Utils.LOG.finest("Running Stabilize\n");
+			Loggs.LOG.finest("Running Stabilize\n");
 			PeerI nextPeer = this.chordManager.getNextPeer();
 			String stabilizeMessage = CreateMsg.getHeader(MsgType.STABILIZE, "1.0", myPeerId);
 			String response = Client.sendMsg(nextPeer.getAddress(), nextPeer.getPort(), stabilizeMessage, true);
 			if(response == null) {
-				Utils.LOG.warning("Next peer created");
+				Loggs.LOG.warning("Next peer created");
 				this.chordManager.popNextPeer();
 				return;
 			}

@@ -19,7 +19,7 @@ import java.util.logging.SimpleFormatter;
 
 import chord.ManageChord;
 
-public class Utils {
+public class Loggs {
 	public static final int TIME_MAX_TO_SLEEP = 400;
 	public static final int MAX_CHUNK_SIZE = 64000;
 	public static final int BYTE_TO_KBYTE = 1000;

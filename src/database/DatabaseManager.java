@@ -6,7 +6,7 @@ import java.sql.*;
 import java.util.ArrayList;
 import chord.PeerI;
 import communication.Leases;
-import util.Utils;
+import util.Loggs;
 import org.apache.derby.shared.common.error.DerbySQLIntegrityConstraintViolationException;
 
 
@@ -20,9 +20,9 @@ public class DatabaseManager {
 			s.setInt(3, peer.getPort());
 			s.executeUpdate();
 			c.commit();
-			Utils.logging("peer " + peer.getId() + " stored");
+			Loggs.logging("peer " + peer.getId() + " stored");
 		} catch (DerbySQLIntegrityConstraintViolationException e) {
-			Utils.LOG.info("peer already stored, updating peer instead");
+			Loggs.LOG.info("peer already stored, updating peer instead");
 			updatePeer(c, peer);
 		} catch (SQLException e) {
 			System.err.println(e.getMessage());
@@ -37,7 +37,7 @@ public class DatabaseManager {
 			s.setString(3, peer.getId());
 			s.executeUpdate();
 			c.commit();
-			Utils.logging("peer " + peer.getId() + " updated");
+			Loggs.logging("peer " + peer.getId() + " updated");
 		} catch (SQLException e) {
 			System.err.println(e.getMessage());
 		}
@@ -64,7 +64,7 @@ public class DatabaseManager {
 			c.commit();
 			System.out.println("file " + file.getfile() + " stored");
 		} catch (DerbySQLIntegrityConstraintViolationException e) {
-			Utils.LOG.info("file already stored, updating file");
+			Loggs.LOG.info("file already stored, updating file");
 			updateFile(c, file);
 		} catch (SQLException e) {
 			System.err.println(e.getMessage());
@@ -90,7 +90,7 @@ public class DatabaseManager {
 			s.setString(4, file.getfile());
 			s.executeUpdate();
 			c.commit();
-			Utils.logging("file " + file.getfile() + " updated");
+			Loggs.logging("file " + file.getfile() + " updated");
 		} catch (SQLException e) {
 			System.err.println(e.getMessage());
 		}
@@ -121,7 +121,7 @@ public class DatabaseManager {
 			s.setInt(4, chunkInfo.getsize());
 			s.executeUpdate();
 			c.commit();
-			Utils.logging("file " + chunkInfo.getfileid() + " - chunk " + chunkInfo.getchunkid() + " - stored");
+			Loggs.logging("file " + chunkInfo.getfileid() + " - chunk " + chunkInfo.getchunkid() + " - stored");
 		} catch (DerbySQLIntegrityConstraintViolationException e) {
 			updateRepDeg(c,chunkInfo);
 		} catch (SQLException e) {
@@ -137,7 +137,7 @@ public class DatabaseManager {
 			s.setString(3, chunkInfo.getfileid());
 			s.executeUpdate();
 			c.commit();
-			Utils.logging("file " + chunkInfo.getfileid() + " - chunk " + chunkInfo.getchunkid() + " - repdeg updated");
+			Loggs.logging("file " + chunkInfo.getfileid() + " - chunk " + chunkInfo.getchunkid() + " - repdeg updated");
 		} catch (SQLException e) {
 			System.err.println(e.getMessage());
 		}
@@ -150,7 +150,7 @@ public class DatabaseManager {
 			s.setString(2, request.getid());
 			s.executeUpdate();
 			c.commit();
-			Utils.logging("backup request " + request.getid() + " updated");
+			Loggs.logging("backup request " + request.getid() + " updated");
 		} catch (SQLException e) {
 			System.err.println(e.getMessage());
 		}
@@ -187,7 +187,7 @@ public class DatabaseManager {
 				s.setInt(5, backupRequest.getchunksnumber());
 				s.executeUpdate();
 				c.commit();
-				Utils.logging("file " + backupRequest.getname() + " backup request stored");
+				Loggs.logging("file " + backupRequest.getname() + " backup request stored");
 			} catch (SQLException e) {
 				System.err.println(e.getMessage());
 			}

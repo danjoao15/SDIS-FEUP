@@ -27,7 +27,7 @@ import database.Chunk;
 import database.DatabaseManager;
 import database.Stored;
 import util.Confidential;
-import util.Utils;
+import util.Loggs;
 
 public class HandleMessage implements Runnable {
 
@@ -58,7 +58,7 @@ public class HandleMessage implements Runnable {
 
 	String parseMessage(byte[] readData) {
 		String request = new String(readData,StandardCharsets.ISO_8859_1);
-		Utils.LOG.finest("SSLServer: " + request);
+		Loggs.LOG.finest("SSLServer: " + request);
 
 		request = request.trim();
 		String[] lines = request.split("\r\n");
@@ -87,7 +87,7 @@ public class HandleMessage implements Runnable {
 			if (secondLine != null) {
 				response = peer.getChordManager().lookup(secondLine[0]);
 			}else {
-				Utils.LOG.warning("Invalid lookup message");
+				Loggs.LOG.warning("Invalid lookup message");
 			}
 			break;
 		case PING:
@@ -121,7 +121,7 @@ public class HandleMessage implements Runnable {
 		case CONFIRMSTORED:
 			parseConfirmStored(secondLine);
 		default:
-			Utils.LOG.warning("Unexpected message received: " + request);
+			Loggs.LOG.warning("Unexpected message received: " + request);
 			break;
 		}
 		return response;
@@ -131,12 +131,12 @@ public class HandleMessage implements Runnable {
 		String fileId = secondLine[0];
 		Integer chunkNo = Integer.parseInt(secondLine[1]);
 		Integer repDegree = Integer.parseInt(secondLine[2]);
-		Utils.LOG.info("Chunk " + fileId + "_" + chunkNo + ", saved with replication degree=" + repDegree);
+		Loggs.LOG.info("Chunk " + fileId + "_" + chunkNo + ", saved with replication degree=" + repDegree);
 		
 	}
 
 	private String parseResponsible(String[] lines) {
-		Utils.LOG.info("Received Responsible");
+		Loggs.LOG.info("Received Responsible");
 		for(int i=1;i<lines.length-1;i++) {
 			String[] currentLine = lines[i].split(" ");
 			String fileID = currentLine[0];
@@ -205,19 +205,19 @@ public class HandleMessage implements Runnable {
 		CompletionHandler<Integer, ByteBuffer> writter = new CompletionHandler<Integer, ByteBuffer>() {
 			@Override
 			public void completed(Integer result, ByteBuffer buffer) {
-				Utils.LOG.info("Finished writing!");
+				Loggs.LOG.info("Finished writing!");
 			}
 
 			@Override
 			public void failed(Throwable arg0, ByteBuffer arg1) {
-				Utils.LOG.warning("Could not write!");
+				Loggs.LOG.warning("Could not write!");
 			}
 
 		};
 		ByteBuffer src = ByteBuffer.allocate(body_bytes.length);
 		src.put(body_bytes);
 		src.flip();
-		channel.write(src, chunkNo*Utils.MAX_CHUNK_SIZE, src, writter);
+		channel.write(src, chunkNo*Loggs.MAX_CHUNK_SIZE, src, writter);
 
 		return null;
 	}
@@ -236,7 +236,7 @@ public class HandleMessage implements Runnable {
 
 		Chunk chunkInfo = new Chunk(chunkNo, fileID);
 		if(DatabaseManager.checkChunkStored(dbConnection, chunkInfo )) {
-			String body = Utils.read(PeerMain.getPath().resolve(chunkInfo.getfile()).toString());
+			String body = Loggs.read(PeerMain.getPath().resolve(chunkInfo.getfile()).toString());
 			String msg = CreateMsg.getChunk(this.myPeerID, fileID, chunkNo, body.getBytes(StandardCharsets.ISO_8859_1));
 			Client.sendMsg(address, port, msg, false);
 		} else {
@@ -254,12 +254,12 @@ public class HandleMessage implements Runnable {
 		if (isFileStored) {
 			ArrayList<Chunk> chunks = DatabaseManager.getFileChunks(dbConnection, file);
 			chunks.forEach(chunk -> {
-				Utils.delete(PeerMain.getPath().resolve(chunk.getfile()));
+				Loggs.delete(PeerMain.getPath().resolve(chunk.getfile()));
 				PeerMain.decreaseStorageUsed(chunk.getsize());
 			});
 			DatabaseManager.deleteFile(dbConnection, file);
 			repDeg--;
-			Utils.LOG.info("Deleted file: " + file);
+			Loggs.LOG.info("Deleted file: " + file);
 		}
 		
 		if (repDeg > 0 || !isFileStored) {
@@ -267,7 +267,7 @@ public class HandleMessage implements Runnable {
 			String message = CreateMsg.getDelete(myPeerID, file, repDeg);
 			PeerI successor = peer.getChordManager().getSuccessor(0);
 			Client.sendMsg(successor.getAddress(), successor.getPort(), message, false);
-			Utils.LOG.info("Forwarded delete: " + file);
+			Loggs.LOG.info("Forwarded delete: " + file);
 		}
 		
 	}
@@ -287,7 +287,7 @@ public class HandleMessage implements Runnable {
 
 
 	private String parseStored(String[] lines) {
-		Utils.LOG.info("Stored Received");
+		Loggs.LOG.info("Stored Received");
 		String fileID = lines[0];
 		Integer chunkNo = Integer.valueOf(lines[1]);
 		Integer repDeg = Integer.valueOf(lines[2]);
@@ -313,7 +313,7 @@ public class HandleMessage implements Runnable {
 				String msg = CreateMsg.getConfirmStored(myPeerID, fileID, chunkNo, repDeg);
 				Client.sendMsg(peerRequested.getAddress(), peerRequested.getPort(), msg, false);
 			} else {
-				Utils.LOG.severe("Could not get peer which requested backup!");
+				Loggs.LOG.severe("Could not get peer which requested backup!");
 			}
 			return null;
 		}
@@ -322,7 +322,7 @@ public class HandleMessage implements Runnable {
 		}
 		AbstractPeer predecessor = peer.getChordManager().getPredecessor();
 		if (predecessor.isNull()) {
-			Utils.LOG.info("There's no predecessor");
+			Loggs.LOG.info("There's no predecessor");
 		}else {
 			String msg = CreateMsg.getStored(myPeerID, fileID, chunkNo, repDeg);
 			Client.sendMsg(predecessor.getAddress(),predecessor.getPort(), msg, false);
@@ -366,9 +366,9 @@ public class HandleMessage implements Runnable {
 		}
 
 		if(!PeerMain.capacityExceeded(body_bytes.length)) {
-			Utils.LOG.info("Writing/Saving chunk");
+			Loggs.LOG.info("Writing/Saving chunk");
 			try {
-				Utils.write(path, body_bytes);
+				Loggs.write(path, body_bytes);
 				DatabaseManager.storeChunk(dbConnection, new Chunk(nChunk,IDfile, body_bytes.length));
 				
 			} catch (IOException e) {
@@ -385,7 +385,7 @@ public class HandleMessage implements Runnable {
 		} else {
 			String msg = CreateMsg.getKeepChunk(id, address, port, IDfile, nChunk, repDeg, body_bytes);
 			Client.sendMsg(chordManager.getSuccessor(0).getAddress(),chordManager.getSuccessor(0).getPort(), msg, false);
-			Utils.LOG.warning("Capacity Exceeded");
+			Loggs.LOG.warning("Capacity Exceeded");
 
 		}
 	}
@@ -409,14 +409,14 @@ public class HandleMessage implements Runnable {
 
 		Path path = PeerMain.getPath().resolve(IDfile + "_" + nChunk);
 		if(DatabaseManager.checkResponsible(dbConnection, IDfile)) {
-			Utils.LOG.info("KeepChunk: I am responsible ");
+			Loggs.LOG.info("KeepChunk: I am responsible ");
 			PeerI predecessor = (PeerI) chordManager.getPredecessor();
 			String msg = CreateMsg.getStored(myPeerID, IDfile, nChunk, 0);
 			Client.sendMsg(predecessor.getAddress(), predecessor.getPort(), msg, false);
 			return;
 		}
 		if(id_request.equals(myPeerID)) {
-			Utils.LOG.info("I am responsible");
+			Loggs.LOG.info("I am responsible");
 			
 			PeerI nextPeer = chordManager.getSuccessor(0);
 			String message = CreateMsg.getKeepChunk(id_request, address_request, port_request, IDfile, nChunk, repDeg, body_bytes);
@@ -428,7 +428,7 @@ public class HandleMessage implements Runnable {
 			DatabaseManager.storeFile(dbConnection, new Stored(IDfile, false));
 			DatabaseManager.storeChunk(dbConnection, new Chunk(nChunk,IDfile, body_bytes.length));
 			try {
-				Utils.write(path, body_bytes);
+				Loggs.write(path, body_bytes);
 			} catch (IOException e) {
 				e.printStackTrace();
 			}
@@ -442,7 +442,7 @@ public class HandleMessage implements Runnable {
 			}
 			return;
 		} else {
-			Utils.LOG.warning("No Space");
+			Loggs.LOG.warning("No Space");
 			String msg = CreateMsg.getKeepChunk(id_request, address_request, port_request, IDfile, nChunk, repDeg, body_bytes);
 			Client.sendMsg(chordManager.getSuccessor(0).getAddress(),chordManager.getSuccessor(0).getPort(), msg, false);
 			return;
@@ -457,11 +457,11 @@ public class HandleMessage implements Runnable {
 		PeerI potentialPredecessor = new PeerI(id, address, port);
 		if (potentialPredecessor.getId() == myPeerID) return;
 		AbstractPeer previousPredecessor = peer.getChordManager().getPredecessor();
-		if (previousPredecessor.isNull() || Utils.inTheMiddle(previousPredecessor.getId(), myPeerID, potentialPredecessor.getId())) {
+		if (previousPredecessor.isNull() || Loggs.inTheMiddle(previousPredecessor.getId(), myPeerID, potentialPredecessor.getId())) {
 			PeerI newPredecessor = potentialPredecessor;
-			Utils.LOG.info("Update predecessor to " + newPredecessor.getId());
+			Loggs.LOG.info("Update predecessor to " + newPredecessor.getId());
 			this.peer.getChordManager().setPredecessor(newPredecessor);
-			Utils.LOG.info("Update predecessor, sending responsibility");
+			Loggs.LOG.info("Update predecessor, sending responsibility");
 			peer.sendResponsability();
 		}
 	}
