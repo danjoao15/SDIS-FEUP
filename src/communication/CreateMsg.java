@@ -125,7 +125,7 @@ public class CreateMsg {
 	}
 
 	public static String getIDelete(String senderId, String fileId) {
-		String msg = getFirstLine(MsgType.INITDELETE, "1.0",senderId);
+		String msg = getFirstLine(MsgType.IDELETE, "1.0",senderId);
 		return appendLine(msg, new Object[] {fileId});
 	}
 	public static String getDelete(String senderId, String fileId, int repDegree) {

@@ -80,7 +80,7 @@ public class HandleMessage implements Runnable {
 		case DELETE:
 			parseDelete(secondLine);
 			break;
-		case INITDELETE:
+		case IDELETE:
 			parseIDelete(firstLine, secondLine);
 			break;
 		case LOOKUP:
