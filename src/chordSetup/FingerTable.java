@@ -52,14 +52,6 @@ public class FingerTable implements Runnable {
 		BigInteger res = _id.add(add).mod(mod);
 		return res.toString(16);
 	}
-
-	private void printFT() {
-		String m = new String();
-		for (int i = 0; i < chord.getFingerTable().size(); i++) {
-			m += "\t" + chord.getFingerTable().get(i).getId() + "\n";
-		}
-		Loggs.LOG.finest("Tabela de dedos: " + chord.getPeerInfo().getId() + "\n" + m);
-	}
 	
 	public FingerTable(ManageChord chord) {
 		this.chord = chord;

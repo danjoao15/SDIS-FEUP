@@ -50,7 +50,7 @@ public class Loggs {
 		BigInteger _sup = new BigInteger(sup,16);
 		BigInteger _value = new BigInteger(value,16);
 
-		BigInteger aux = new BigInteger((Math.pow(2, ManageChord.getM())+"").getBytes());
+		BigInteger aux = new BigInteger((""+Math.pow(2, ManageChord.getM())).getBytes());
 
 		if(_sup.compareTo(_inf) <= 0) {
 			_sup  = _sup.add(aux);
@@ -94,12 +94,12 @@ public class Loggs {
 			CompletionHandler<Integer, ByteBuffer> writter = new CompletionHandler<Integer, ByteBuffer>() {
 				@Override
 				public void completed(Integer result, ByteBuffer buffer) {
-					System.out.println("Finished writing!");
+					System.out.println("writing complete");
 				}
 
 				@Override
 				public void failed(Throwable arg0, ByteBuffer arg1) {
-					System.err.println("Error: Could not write!");
+					System.err.println("error writing");
 
 				}
 
@@ -109,7 +109,7 @@ public class Loggs {
 			src.flip();
 			channel.write(src, 0, src, writter);
 		} else {
-			System.out.println("File may exist already.");
+			System.out.println("file may already exist");
 		}
 	}
 

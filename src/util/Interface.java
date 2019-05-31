@@ -10,17 +10,17 @@ import database.Backup;
 import database.DatabaseManager;
 import main.PeerMain;
 
-public class IOManager{
+public class Interface{
 
 	private PeerMain peer;
 	
-	public IOManager(PeerMain peer){
+	public Interface(PeerMain peer){
 		this.peer = peer;
 	}
 	
 	public void run() {
 		while(true) {
-			System.out.println("Action Selector:");
+			System.out.println("input number correspondant to desired action");
 			System.out.println("0 - backup file");
 			System.out.println("1 - restore file");
 			System.out.println("2 - delete file");
@@ -36,15 +36,15 @@ public class IOManager{
 			}
 			switch (option) {
 			case 0:{
-				IOManager.backup(scan, peer);
+				Interface.backup(scan, peer);
 				break;
 			}
 			case 1:{
-				IOManager.restore(scan, peer);
+				Interface.restore(scan, peer);
 				break;
 			}
 			case 2:{
-				IOManager.delete(scan, peer);
+				Interface.delete(scan, peer);
 				break;
 			}
 			case 3:{
@@ -66,20 +66,18 @@ public class IOManager{
 		if (requests.size() > 0) {
 			int option = -1;
 			do {
-				System.out.println("Choose the file you want to restore:");
+				System.out.println("input number correspondant to desired file to restore");
 				for (int i = 0; i < requests.size(); i++) {
-					System.out.println(i + ". " + requests.get(i).getname() + " -> " + requests.get(i).getid());
+					System.out.println(i + " - " + requests.get(i).getname() + " (" + requests.get(i).getid()+")");
 				}
 				try {
 					option = scan.nextInt();
 				}catch(InputMismatchException e) {
-					System.out.println("Invalid Input");
+					System.out.println("invalid input");
 					scan.nextLine();
 				}
 			} while(option < 0 && option >= requests.size());
 			peer.restore(requests.get(option));
-		} else {
-			System.out.println("Backup your files before restoring");
 		}
 	}
 	
@@ -88,45 +86,43 @@ public class IOManager{
 		if (requests.size() > 0) {
 			int option = -1;
 			do {
-				System.out.println("Choose the file you want to delete:");
+				System.out.println("input number correspondant to desired file to restore");
 				for (int i = 0; i < requests.size(); i++) {
 					System.out.println(i + ". " + requests.get(i).getname() + " - " + requests.get(i).getid());
 				}
 				try {
 					option = scan.nextInt();
 				}catch(InputMismatchException e) {
-					System.out.println("Invalid Option");
+					System.out.println("invalid input");
 					scan.nextLine();
 				}
 			} while(option < 0 || option >=requests.size());
 			peer.delete(requests.get(option).getid());
 			
-		} else {
-			System.out.println("Backup your files before deleting");
 		}
 	}
 
 	private static void backup(Scanner scan, PeerMain peer) {
-		System.out.println("FileName:");
+		System.out.println("input file name");
 		String name;
 		name = scan.next();
 		if(!Files.exists(Paths.get(name))) {
-			System.out.println("The file does not exist!");
+			System.out.println("file not found");
 			return;
 		}
 		Integer deg = 0;
 		do {
-			System.out.println("Choose your Replication Degree (1-8):");
+			System.out.println("input desired replication degree");
 			try {
 				deg = scan.nextInt();
 			}catch(InputMismatchException e) {
-				System.out.println("Invalid Replication Degree");
+				System.out.println("invalid input");
 				scan.nextLine();
 			}
-		} while((deg < 1) || (deg > 9));
+		} while((deg < 1));
 			
 		peer.backup(name, deg,null);
-		System.out.println("Request to Backup sent!");
+		System.out.println("backup request sent");
 	}
 	
 
