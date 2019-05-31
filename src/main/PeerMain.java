@@ -131,16 +131,23 @@ public class PeerMain {
 				e.printStackTrace();
 			}
 		}
-		Path pathfile = Paths.get(getPath().toString()+"/backup/");
-		if(!Files.exists(pathfile)) {
+		Path pathFile = Paths.get(getPath().toString() + "/backup/");
+		if(!Files.exists(pathFile)) {
 			try {
-				Files.createDirectory(pathfile);
+				Files.createDirectory(pathFile);
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+		}
+		Path pathFileReclaim = Paths.get(getPath().toString() + "/reclaim/");
+		if(!Files.exists(pathFileReclaim)) {
+			try {
+				Files.createDirectory(pathFile);
 			} catch (IOException e) {
 				e.printStackTrace();
 			}
 		}
 	}
-
 	public static boolean capacityExceeded(int amount) {
 		if(usedStorage + amount > storageCapacity) {
 			return true;

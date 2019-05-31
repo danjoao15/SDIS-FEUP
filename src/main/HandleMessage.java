@@ -299,16 +299,18 @@ public class HandleMessage implements Runnable {
 		int nChunk = Integer.parseInt(header[4]);
 		int repDeg = Integer.parseInt(header[5]);
 
-		Path pathfile = PeerMain.getPath().resolve("backup/" + IDfile);
-		if(!Files.exists(pathfile)) {
+		
+		Path pathFile = PeerMain.getPath().resolve("backup/" + IDfile);
+		if(!Files.exists(pathFile)) {
 			try {
-				Files.createDirectory(pathfile);
+				Files.createDirectory(pathFile);
 			} catch (IOException e) {
 				e.printStackTrace();
 			}
 		}
-		Path path = PeerMain.getPath().resolve("backup/" + IDfile + "/chunk" + nChunk);
 
+		Path path = PeerMain.getPath().resolve("backup/" + IDfile + "/" + "chunk_" + nChunk);
+		
 		Peer peerRequesting = new Peer(id,address,port);
 		DatabaseManager.storePeer(dbConnection, peerRequesting);
 		Stored fileInfo = new Stored(IDfile, true);
@@ -366,15 +368,17 @@ public class HandleMessage implements Runnable {
 		int nChunk = Integer.parseInt(header[4]);
 		int repDeg = Integer.parseInt(header[5]);
 
-		Path pathfile = PeerMain.getPath().resolve("backup/" + IDfile);
-		if(!Files.exists(pathfile)) {
+		Path pathFile = PeerMain.getPath().resolve("backup/" + IDfile);
+		if(!Files.exists(pathFile)) {
 			try {
-				Files.createDirectory(pathfile);
+				Files.createDirectory(pathFile);
 			} catch (IOException e) {
 				e.printStackTrace();
 			}
 		}
-		Path path = PeerMain.getPath().resolve("backup/" + IDfile + "/chunk" + nChunk);
+
+		Path path = PeerMain.getPath().resolve("backup/" + IDfile + "/chunk_" + nChunk);
+		
 		
 		if(DatabaseManager.checkResponsible(dbConnection, IDfile)) {
 			Peer predecessor = (Peer) chordManager.getPredecessor();
