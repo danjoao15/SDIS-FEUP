@@ -1,9 +1,9 @@
 package protocols;
 
-import chord.ManageChord;
-import chord.PeerI;
-import communication.Client;
-import communication.CreateMsg;
+import chordSetup.ManageChord;
+import chordSetup.PeerI;
+import main.Client;
+import main.CreateMsg;
 import util.Loggs;
 
 public class SendIDelete implements Runnable{

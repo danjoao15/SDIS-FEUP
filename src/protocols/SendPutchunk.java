@@ -1,10 +1,11 @@
 package protocols;
 
 import java.util.Arrays;
-import communication.Client;
-import communication.CreateMsg;
-import chord.ManageChord;
-import chord.PeerI;
+
+import chordSetup.ManageChord;
+import chordSetup.PeerI;
+import main.Client;
+import main.CreateMsg;
 
 public class SendPutchunk implements Runnable {
 

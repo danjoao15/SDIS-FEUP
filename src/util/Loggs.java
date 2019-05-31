@@ -17,7 +17,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.logging.SimpleFormatter;
 
-import chord.ManageChord;
+import chordSetup.ManageChord;
 
 public class Loggs {
 	public static final int TIME_MAX_TO_SLEEP = 400;

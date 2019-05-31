@@ -4,10 +4,11 @@ import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.sql.*;
 import java.util.ArrayList;
-import chord.PeerI;
-import communication.Leases;
+import chordSetup.PeerI;
+import main.Leases;
 import util.Loggs;
 import org.apache.derby.shared.common.error.DerbySQLIntegrityConstraintViolationException;
+
 
 
 public class DatabaseManager {

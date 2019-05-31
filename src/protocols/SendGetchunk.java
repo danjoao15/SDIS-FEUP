@@ -1,10 +1,10 @@
 package protocols;
 
-import chord.ManageChord;
-import chord.PeerI;
-import communication.Client;
-import communication.CreateMsg;
+import chordSetup.ManageChord;
+import chordSetup.PeerI;
 import database.Backup;
+import main.Client;
+import main.CreateMsg;
 
 public class SendGetchunk implements Runnable {
 

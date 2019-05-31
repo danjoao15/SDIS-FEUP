@@ -6,9 +6,9 @@ import java.util.ArrayList;
 import java.util.InputMismatchException;
 import java.util.Scanner;
 
-import communication.PeerMain;
 import database.Backup;
 import database.DatabaseManager;
+import main.PeerMain;
 
 public class IOManager{
 
