@@ -24,7 +24,7 @@ public class IOManager{
 			System.out.println("\t0. Terminate Program");
 			System.out.println("\t1. Backup File");
 			System.out.println("\t2. Restore File");
-			System.out.println("\t3. Delete File");
+			//System.out.println("\t3. Delete File");
 			Scanner scan = new Scanner(System.in);
 			Integer option = null;
 			try {
@@ -48,10 +48,10 @@ public class IOManager{
 				IOManager.restore(scan, peer);
 				break;
 			}
-			case 3:{
+			/*case 3:{
 				IOManager.delete(scan, peer);
 				break;
-			}
+			}*/
 			default: {
 				System.out.println("Invalid Option!");
 				continue;
@@ -83,7 +83,7 @@ public class IOManager{
 		}
 	}
 	
-	private static void delete(Scanner scan, PeerMain peer) {
+	/*private static void delete(Scanner scan, PeerMain peer) {
 		ArrayList<Backup> requests = DatabaseManager.getRequestedBackups(peer.getConnection());
 		if (requests.size() > 0) {
 			int option = -1;
@@ -107,7 +107,7 @@ public class IOManager{
 		
 
 	}
-
+*/
 	private static void backup(Scanner scan, PeerMain peer) {
 		System.out.println("FileName:");
 		String name;

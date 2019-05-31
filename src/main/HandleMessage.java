@@ -76,13 +76,13 @@ public class HandleMessage implements Runnable {
 		switch (MsgType.valueOf(firstLine[0])) {
 		case SUCCESSORS:
 			parseSuccessors(secondLine);
-			break;
+		/*	break;
 		case DELETE:
 			parseDelete(secondLine);
 			break;
 		case IDELETE:
 			parseIDelete(firstLine, secondLine);
-			break;
+			break;*/
 		case LOOKUP:
 			if (secondLine != null) {
 				response = peer.getChordManager().lookup(secondLine[0]);
@@ -248,7 +248,7 @@ public class HandleMessage implements Runnable {
 	}
 
 
-	private void delete(String file, int repDeg) {
+	/*private void delete(String file, int repDeg) {
 		System.out.println("Delete file: " + file + ". Replication Degree: " + repDeg);
 		boolean isFileStored = DatabaseManager.checkFile(dbConnection, file);
 		if (isFileStored) {
@@ -285,7 +285,7 @@ public class HandleMessage implements Runnable {
 		delete(fileToDelete,repDegree);
 	}
 
-
+*/
 	private String parseStored(String[] lines) {
 		Loggs.LOG.info("Stored Received");
 		String fileID = lines[0];
