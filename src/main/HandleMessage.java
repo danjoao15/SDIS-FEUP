@@ -26,7 +26,7 @@ import database.Backup;
 import database.Chunk;
 import database.DatabaseManager;
 import database.Stored;
-import util.Confidential;
+import util.Encryption;
 import util.Loggs;
 
 public class HandleMessage implements Runnable {
@@ -58,7 +58,7 @@ public class HandleMessage implements Runnable {
 
 	String parseMessage(byte[] readData) {
 		String request = new String(readData,StandardCharsets.ISO_8859_1);
-		Loggs.LOG.finest("SSLServer: " + request);
+		Loggs.LOG.finest("SSLServer - " + request);
 
 		request = request.trim();
 		String[] lines = request.split("\r\n");
@@ -87,7 +87,7 @@ public class HandleMessage implements Runnable {
 			if (secondLine != null) {
 				response = peer.getChordManager().lookup(secondLine[0]);
 			}else {
-				Loggs.LOG.warning("Invalid lookup message");
+				Loggs.LOG.warning("invalid lookup");
 			}
 			break;
 		case PING:
@@ -121,7 +121,7 @@ public class HandleMessage implements Runnable {
 		case CONFIRMSTORED:
 			parseConfirmStored(secondLine);
 		default:
-			Loggs.LOG.warning("Unexpected message received: " + request);
+			Loggs.LOG.warning("unexpected message received - " + request);
 			break;
 		}
 		return response;
@@ -131,12 +131,12 @@ public class HandleMessage implements Runnable {
 		String fileId = secondLine[0];
 		Integer chunkNo = Integer.parseInt(secondLine[1]);
 		Integer repDegree = Integer.parseInt(secondLine[2]);
-		Loggs.LOG.info("Chunk " + fileId + "_" + chunkNo + ", saved with replication degree=" + repDegree);
+		Loggs.LOG.info("chunk " + fileId + " - " + chunkNo + " saved with repdeg=" + repDegree);
 		
 	}
 
 	private String parseResponsible(String[] lines) {
-		Loggs.LOG.info("Received Responsible");
+		Loggs.LOG.info("responsible parsed");
 		for(int i=1;i<lines.length-1;i++) {
 			String[] currentLine = lines[i].split(" ");
 			String fileID = currentLine[0];
@@ -180,10 +180,10 @@ public class HandleMessage implements Runnable {
 		Backup b = DatabaseManager.getBackup(dbConnection, file_id);
 
 		
-		Confidential conf = new Confidential(b.getkey());
+		Encryption conf = new Encryption(b.getkey());
 		
 		body_bytes = conf.decryptation(body_bytes);
-		Path filepath = PeerMain.getPath().resolve("Restore File-" + b.getname());
+		Path filepath = PeerMain.getPath().resolve("restore file - " + b.getname());
 
 		try {
 			Files.createFile(filepath);
@@ -205,12 +205,12 @@ public class HandleMessage implements Runnable {
 		CompletionHandler<Integer, ByteBuffer> writter = new CompletionHandler<Integer, ByteBuffer>() {
 			@Override
 			public void completed(Integer result, ByteBuffer buffer) {
-				Loggs.LOG.info("Finished writing!");
+				Loggs.LOG.info("writing complete");
 			}
 
 			@Override
 			public void failed(Throwable arg0, ByteBuffer arg1) {
-				Loggs.LOG.warning("Could not write!");
+				Loggs.LOG.warning("error writing");
 			}
 
 		};
@@ -249,7 +249,7 @@ public class HandleMessage implements Runnable {
 
 
 	private void delete(String file, int repDeg) {
-		System.out.println("Delete file: " + file + ". Replication Degree: " + repDeg);
+		System.out.println("deleting file " + file);
 		boolean isFileStored = DatabaseManager.checkFile(dbConnection, file);
 		if (isFileStored) {
 			ArrayList<Chunk> chunks = DatabaseManager.getFileChunks(dbConnection, file);
@@ -259,15 +259,15 @@ public class HandleMessage implements Runnable {
 			});
 			DatabaseManager.deleteFile(dbConnection, file);
 			repDeg--;
-			Loggs.LOG.info("Deleted file: " + file);
+			Loggs.LOG.info("deleted file " + file);
 		}
 		
 		if (repDeg > 0 || !isFileStored) {
-			System.out.println("Deleting from peer: " + peer.getChordManager().getSuccessor(0).getId());
+			System.out.println("deleting from peer " + peer.getChordManager().getSuccessor(0).getId());
 			String message = CreateMsg.getDelete(myPeerID, file, repDeg);
 			Peer successor = peer.getChordManager().getSuccessor(0);
 			Client.sendMsg(successor.getAddress(), successor.getPort(), message, false);
-			Loggs.LOG.info("Forwarded delete: " + file);
+			Loggs.LOG.info(file + " deleted");
 		}
 		
 	}
@@ -287,7 +287,6 @@ public class HandleMessage implements Runnable {
 
 
 	private String parseStored(String[] lines) {
-		Loggs.LOG.info("Stored Received");
 		String fileID = lines[0];
 		Integer chunkNo = Integer.valueOf(lines[1]);
 		Integer repDeg = Integer.valueOf(lines[2]);
@@ -313,7 +312,7 @@ public class HandleMessage implements Runnable {
 				String msg = CreateMsg.getConfirmStored(myPeerID, fileID, chunkNo, repDeg);
 				Client.sendMsg(peerRequested.getAddress(), peerRequested.getPort(), msg, false);
 			} else {
-				Loggs.LOG.severe("Could not get peer which requested backup!");
+				Loggs.LOG.severe("error reaching requesting peer");
 			}
 			return null;
 		}
@@ -322,7 +321,7 @@ public class HandleMessage implements Runnable {
 		}
 		AbstractPeer predecessor = peer.getChordManager().getPredecessor();
 		if (predecessor.isNull()) {
-			Loggs.LOG.info("There's no predecessor");
+			Loggs.LOG.info("error reaching predecessor");
 		}else {
 			String msg = CreateMsg.getStored(myPeerID, fileID, chunkNo, repDeg);
 			Client.sendMsg(predecessor.getAddress(),predecessor.getPort(), msg, false);
@@ -365,7 +364,7 @@ public class HandleMessage implements Runnable {
 		}
 
 		if(!PeerMain.capacityExceeded(body_bytes.length)) {
-			Loggs.LOG.info("Writing/Saving chunk");
+			Loggs.LOG.info("saving chunk");
 			try {
 				Loggs.write(path, body_bytes);
 				DatabaseManager.storeChunk(dbConnection, new Chunk(nChunk,IDfile, body_bytes.length));
@@ -384,7 +383,7 @@ public class HandleMessage implements Runnable {
 		} else {
 			String msg = CreateMsg.getKeepChunk(id, address, port, IDfile, nChunk, repDeg, body_bytes);
 			Client.sendMsg(chordManager.getSuccessor(0).getAddress(),chordManager.getSuccessor(0).getPort(), msg, false);
-			Loggs.LOG.warning("Capacity Exceeded");
+			Loggs.LOG.warning("max capacity eclipsed");
 
 		}
 	}
@@ -408,15 +407,12 @@ public class HandleMessage implements Runnable {
 
 		Path path = PeerMain.getPath().resolve(IDfile + "_" + nChunk);
 		if(DatabaseManager.checkResponsible(dbConnection, IDfile)) {
-			Loggs.LOG.info("KeepChunk: I am responsible ");
 			Peer predecessor = (Peer) chordManager.getPredecessor();
 			String msg = CreateMsg.getStored(myPeerID, IDfile, nChunk, 0);
 			Client.sendMsg(predecessor.getAddress(), predecessor.getPort(), msg, false);
 			return;
 		}
 		if(id_request.equals(myPeerID)) {
-			Loggs.LOG.info("I am responsible");
-			
 			Peer nextPeer = chordManager.getSuccessor(0);
 			String message = CreateMsg.getKeepChunk(id_request, address_request, port_request, IDfile, nChunk, repDeg, body_bytes);
 			Client.sendMsg(nextPeer.getAddress(),nextPeer.getPort(), message, false);
@@ -441,7 +437,7 @@ public class HandleMessage implements Runnable {
 			}
 			return;
 		} else {
-			Loggs.LOG.warning("No Space");
+			Loggs.LOG.warning("insufficient space");
 			String msg = CreateMsg.getKeepChunk(id_request, address_request, port_request, IDfile, nChunk, repDeg, body_bytes);
 			Client.sendMsg(chordManager.getSuccessor(0).getAddress(),chordManager.getSuccessor(0).getPort(), msg, false);
 			return;
@@ -458,9 +454,8 @@ public class HandleMessage implements Runnable {
 		AbstractPeer previousPredecessor = peer.getChordManager().getPredecessor();
 		if (previousPredecessor.isNull() || Loggs.inTheMiddle(previousPredecessor.getId(), myPeerID, potentialPredecessor.getId())) {
 			Peer newPredecessor = potentialPredecessor;
-			Loggs.LOG.info("Update predecessor to " + newPredecessor.getId());
 			this.peer.getChordManager().setPredecessor(newPredecessor);
-			Loggs.LOG.info("Update predecessor, sending responsibility");
+			Loggs.LOG.info("sending responsibility");
 			peer.sendResponsability();
 		}
 	}

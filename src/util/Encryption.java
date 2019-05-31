@@ -11,12 +11,12 @@ import javax.crypto.KeyGenerator;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
 
-public class Confidential {
+public class Encryption {
 	private byte[] key;
 
 	private static final String AES = "AES";
 	private static final String AES_ECB_PKCS5Padding = "AES/ECB/PKCS5Padding";
-	public Confidential() {
+	public Encryption() {
 		super();
 		KeyGenerator generatedKey;
 		try {
@@ -29,7 +29,7 @@ public class Confidential {
 		this.setKey(aesKey.getEncoded());
 	}
 
-	public Confidential(String encryptKey) {
+	public Encryption(String encryptKey) {
 		this.setKey(encryptKey.getBytes(StandardCharsets.ISO_8859_1));
 	}
 

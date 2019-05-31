@@ -25,7 +25,7 @@ public class Client {
 			socket = (SSLSocket) socketFactory.createSocket(address, port);
 			socket.setSoTimeout(5000);
 		} catch (IOException e) {
-			System.err.println("Can't connect to server");
+			System.err.println("error connecting to server");
 			return null;
 		}
 
@@ -34,7 +34,7 @@ public class Client {
 		try {
 			send(msg, socket);
 		} catch (IOException e1) {
-			System.err.println("Can't send message");
+			System.err.println("error sending");
 			return null;
 		}
 		if(waitR) {
@@ -43,7 +43,7 @@ public class Client {
 		try {
 			socket.close();
 		} catch (IOException e) {
-			System.err.println("Can't close connection");
+			System.err.println("error closing connection");
 			return null;
 		}
 		return response;
@@ -95,22 +95,22 @@ public class Client {
 		try {
 			readStream = socket.getInputStream();
 		} catch (IOException e) {
-			System.err.println("Can't get input stream");
+			System.err.println("error reading input stream");
 			return null;
 		}
 		try {
 			readStream.read(readInfo);
 		} catch(SocketTimeoutException e) {
-			System.err.println("Socket timeout");
+			System.err.println("socket timeout");
 			return null;
 		} catch (IOException e) {
-			System.err.println("Can't read");
+			System.err.println("error reading");
 			return null;
 		}
 		try {
 			socket.close();
 		} catch (IOException e) {
-			System.err.println("Can't close connection");;
+			System.err.println("error closing connection");;
 			return null;
 		}
 		return new String(readInfo,StandardCharsets.ISO_8859_1);

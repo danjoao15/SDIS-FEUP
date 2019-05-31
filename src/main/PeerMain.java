@@ -23,7 +23,7 @@ import database.Stored;
 import protocols.SendGetchunk;
 import protocols.SendIDelete;
 import protocols.SendPutchunk;
-import util.Confidential;
+import util.Encryption;
 import util.Interface;
 import util.SingletonThreadPoolExecutor;
 import util.Loggs;
@@ -161,11 +161,11 @@ public class PeerMain {
 		}
 		byte[] file = Loggs.read(filename).getBytes(StandardCharsets.ISO_8859_1);
 		int n = Math.floorDiv(file.length,LENGTH_OF_CHUNK) + 1;
-		Confidential c;
+		Encryption c;
 		if(encryptKey == null) {
-			c = new Confidential();
+			c = new Encryption();
 		} else {
-			c = new Confidential(encryptKey);
+			c = new Encryption(encryptKey);
 		}
 		encryptKey = new String(c.getKey(), StandardCharsets.ISO_8859_1);
 		Backup backupRequest = new Backup(fileID,filename,encryptKey, degree, n);
