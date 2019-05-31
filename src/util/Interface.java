@@ -21,10 +21,10 @@ public class Interface{
 	public void run() {
 		while(true) {
 			System.out.println("input number correspondant to desired action");
-			System.out.println("0 - backup file");
-			System.out.println("1 - restore file");
-			System.out.println("2 - delete file");
-			System.out.println("3 - end program");
+			System.out.println("1 - backup file");
+			System.out.println("2 - restore file");
+			System.out.println("3 - delete file");
+			System.out.println("0 - end program");
 			Scanner scan = new Scanner(System.in);
 			Integer option = null;
 			try {
@@ -35,19 +35,19 @@ public class Interface{
 				continue;
 			}
 			switch (option) {
-			case 0:{
+			case 1:{
 				Interface.backup(scan, peer);
 				break;
 			}
-			case 1:{
+			case 2:{
 				Interface.restore(scan, peer);
 				break;
 			}
-			case 2:{
+			case 3:{
 				Interface.delete(scan, peer);
 				break;
 			}
-			case 3:{
+			case 0:{
 				scan.close();
 				Thread.currentThread().interrupt();
 				return;
