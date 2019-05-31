@@ -1,4 +1,4 @@
-package util;
+package main;
 
 import java.nio.file.Files;
 import java.nio.file.Paths;
@@ -8,7 +8,6 @@ import java.util.Scanner;
 
 import database.Backup;
 import database.DatabaseManager;
-import main.PeerMain;
 
 public class Interface{
 
@@ -23,7 +22,6 @@ public class Interface{
 			System.out.println("input number correspondant to desired action");
 			System.out.println("1 - backup file");
 			System.out.println("2 - restore file");
-			System.out.println("3 - delete file");
 			System.out.println("0 - end program");
 			Scanner scan = new Scanner(System.in);
 			Integer option = null;
@@ -41,10 +39,6 @@ public class Interface{
 			}
 			case 2:{
 				Interface.restore(scan, peer);
-				break;
-			}
-			case 3:{
-				Interface.delete(scan, peer);
 				break;
 			}
 			case 0:{
@@ -101,27 +95,6 @@ public class Interface{
 				}
 			} while(option < 0 && option >= requests.size());
 			peer.restore(requests.get(option));
-		}
-	}
-	
-	private static void delete(Scanner scan, PeerMain peer) {
-		ArrayList<Backup> requests = DatabaseManager.getRequestedBackups(peer.getConnection());
-		if (requests.size() > 0) {
-			int option = -1;
-			do {
-				System.out.println("input number correspondant to desired file to restore");
-				for (int i = 0; i < requests.size(); i++) {
-					System.out.println(i + ". " + requests.get(i).getname() + " - " + requests.get(i).getid());
-				}
-				try {
-					option = scan.nextInt();
-				}catch(InputMismatchException e) {
-					System.out.println("invalid input");
-					scan.nextLine();
-				}
-			} while(option < 0 || option >=requests.size());
-			peer.delete(requests.get(option).getid());
-			
 		}
 	}
 	

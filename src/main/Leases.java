@@ -27,9 +27,6 @@ public class Leases implements Runnable {
 	public void run() {
 		Timestamp time = new Timestamp(System.currentTimeMillis());
 		updateFiles(time);
-		deleteFiles(time);
-		
-
 	}
 
 	private void updateFiles(Timestamp time) {
@@ -40,25 +37,9 @@ public class Leases implements Runnable {
 			peer.backup(filesToUpdate.get(i).getname(),
 					filesToUpdate.get(i).getrepdegree(),
 					filesToUpdate.get(i).getkey());
-			Loggs.LOG.info("Lease:Updated file: " + filesToUpdate.get(i));
+			Loggs.LOG.info("Lease updated file " + filesToUpdate.get(i));
 		}
 
-	}
-
-	private void deleteFiles(Timestamp time) {
-		ArrayList<String> filesToDelete = DatabaseManager.getFilesDelete(peer.getConnection(), time);
-		if (filesToDelete.size() > 0) {
-			System.out.println("Leases: Found " + filesToDelete.size() + " to delete");
-		}
-		for(int i = 0; i < filesToDelete.size(); i++) {
-			ArrayList<Chunk> allChunks = DatabaseManager.getFileChunks(peer.getConnection(), filesToDelete.get(i));
-			allChunks.forEach(chunk -> {
-				Loggs.delete(PeerMain.getPath().resolve(chunk.getinfo()));
-				PeerMain.decreaseStorageUsed(chunk.getsize());
-			});
-			DatabaseManager.deleteFile(peer.getConnection(), filesToDelete.get(i));
-			Loggs.LOG.info("Lease:Deleted file: " + filesToDelete.get(i));
-		}
 	}
 
 }

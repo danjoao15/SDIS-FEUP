@@ -20,17 +20,12 @@ import database.Backup;
 import database.DatabaseManager;
 import database.Database;
 import database.Stored;
-import protocols.SendGetchunk;
-import protocols.SendIDelete;
-import protocols.SendPutchunk;
-import util.Encryption;
-import util.Interface;
-import util.SingletonThreadPoolExecutor;
-import util.Loggs;
+import protocols.*;
+import util.*;
 
 public class PeerMain {
 
-	private static final int LENGTH_OF_CHUNK = 64000;
+	private static final int CHUNKLENGTH = 64000;
 	private ManageChord chordManager;
 	private Server server;
 	private Database database;
@@ -127,17 +122,6 @@ public class PeerMain {
 		PeerMain.path = p;
 	}
 
-	/*
- * 
- * 
- * 
- * 
- * 
- * 
- * 
- * 
- * 
- * ****/
 	public static void generatePath(String id) {
 		setPath(Paths.get("peer_" + id));
 		if(!Files.exists(getPath())) {
@@ -147,20 +131,16 @@ public class PeerMain {
 				e.printStackTrace();
 			}
 		}
+		Path pathfile = Paths.get(getPath().toString()+"/backup/");
+		if(!Files.exists(pathfile)) {
+			try {
+				Files.createDirectory(pathfile);
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+		}
 	}
-/*
- * 
- * 
- * 
- * 
- * 
- * 
- * 
- * 
- * 
- * 
- * 
- * */
+
 	public static boolean capacityExceeded(int amount) {
 		if(usedStorage + amount > storageCapacity) {
 			return true;
@@ -183,7 +163,7 @@ public class PeerMain {
 			return;
 		}
 		byte[] file = Loggs.read(filename).getBytes(StandardCharsets.ISO_8859_1);
-		int n = Math.floorDiv(file.length,LENGTH_OF_CHUNK) + 1;
+		int n = Math.floorDiv(file.length,CHUNKLENGTH) + 1;
 		Encryption c;
 		if(encryptKey == null) {
 			c = new Encryption();
@@ -194,30 +174,23 @@ public class PeerMain {
 		Backup backupRequest = new Backup(fileID,filename,encryptKey, degree, n);
 		DatabaseManager.requestBackup(database.getConnection(), backupRequest);
 		int chunkNo = 0;
-		while(file.length > (chunkNo + 1)*LENGTH_OF_CHUNK) {
-			byte[] body = Arrays.copyOfRange(file, chunkNo * LENGTH_OF_CHUNK, (chunkNo + 1) *LENGTH_OF_CHUNK);
+		while(file.length > (chunkNo + 1)*CHUNKLENGTH) {
+			byte[] body = Arrays.copyOfRange(file, chunkNo * CHUNKLENGTH, (chunkNo + 1) *CHUNKLENGTH);
 			body = c.encriptation(body);
-			SendPutchunk th = new SendPutchunk(fileID, chunkNo, degree, body, this.getChordManager());
+			Putchunk th = new Putchunk(fileID, chunkNo, degree, body, this.getChordManager());
 			SingletonThreadPoolExecutor.getInstance().get().execute(th);
 			chunkNo++;
 		}
-		byte[] body = Arrays.copyOfRange(file, chunkNo * LENGTH_OF_CHUNK, file.length);
+		byte[] body = Arrays.copyOfRange(file, chunkNo * CHUNKLENGTH, file.length);
 		body = c.encriptation(body);
-		SendPutchunk th = new SendPutchunk(fileID, chunkNo, degree, body, this.getChordManager());
+		Putchunk th = new Putchunk(fileID, chunkNo, degree, body, this.getChordManager());
 		SingletonThreadPoolExecutor.getInstance().get().execute(th);
-	}
-
-	public void delete(String fileID) {
-		DatabaseManager.deleteBackupRequest(getConnection(), fileID);
-		SendIDelete th = new SendIDelete(fileID,this.getChordManager());
-		SingletonThreadPoolExecutor.getInstance().get().execute(th);
-		
 	}
 
 	public void restore(Backup backupRequest) {
 		Integer totalNumChunks = backupRequest.getchunksnumber();
 		for(int i = 0; i < totalNumChunks; i++) {
-			SendGetchunk th = new SendGetchunk(backupRequest, i,this.getChordManager());
+			Getchunk th = new Getchunk(backupRequest, i,this.getChordManager());
 			SingletonThreadPoolExecutor.getInstance().get().execute(th);
 		}
 	}
@@ -239,11 +212,11 @@ public class PeerMain {
 			}
 		}
 		if (toSend.isEmpty())return;
-		System.out.println("Sending resposibility for files to peer: " + predecessor.getId());
+		System.out.println("sending resposibility for files to peer " + predecessor.getId());
 		toSend.forEach(k->System.out.println(k.getfile()));
 		String msg = CreateMsg.getResponsible(this.chordManager.getPeerInfo().getId(), toSend);
 		Client.sendMsg(predecessor.getAddress(), predecessor.getPort(), msg, false);
-		System.out.println("Sent responsible");
+		System.out.println("sent responsible");
 	}
 
 }

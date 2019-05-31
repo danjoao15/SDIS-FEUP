@@ -11,6 +11,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.FileAlreadyExistsException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
 import java.sql.Connection;
 import java.util.ArrayDeque;
@@ -76,12 +77,6 @@ public class HandleMessage implements Runnable {
 		switch (MsgType.valueOf(firstLine[0])) {
 		case SUCCESSORS:
 			parseSuccessors(secondLine);
-			break;
-		case DELETE:
-			parseDelete(secondLine);
-			break;
-		case IDELETE:
-			parseIDelete(firstLine, secondLine);
 			break;
 		case LOOKUP:
 			if (secondLine != null) {
@@ -244,45 +239,6 @@ public class HandleMessage implements Runnable {
 		return null;
 	}
 
-
-	private void delete(String file, int repDeg) {
-		System.out.println("deleting file " + file);
-		boolean isFileStored = DatabaseManager.checkFile(dbConnection, file);
-		if (isFileStored) {
-			ArrayList<Chunk> chunks = DatabaseManager.getFileChunks(dbConnection, file);
-			chunks.forEach(chunk -> {
-				Loggs.delete(PeerMain.getPath().resolve(chunk.getinfo()));
-				PeerMain.decreaseStorageUsed(chunk.getsize());
-			});
-			DatabaseManager.deleteFile(dbConnection, file);
-			repDeg--;
-			Loggs.LOG.info("deleted file " + file);
-		}
-		
-		if (repDeg > 0 || !isFileStored) {
-			System.out.println("deleting from peer " + peer.getChordManager().getSuccessor(0).getId());
-			String message = CreateMsg.getDelete(myPeerID, file, repDeg);
-			Peer successor = peer.getChordManager().getSuccessor(0);
-			Client.sendMsg(successor.getAddress(), successor.getPort(), message, false);
-			Loggs.LOG.info(file + " deleted");
-		}
-		
-	}
-	
-	private void parseDelete(String [] secondLine) {
-		String fileToDelete = secondLine[0].trim();
-		int repDegree = Integer.parseInt(secondLine[1]);
-		if (DatabaseManager.checkResponsible(dbConnection, fileToDelete)) return;
-		delete(fileToDelete,repDegree);
-	}
-	private void parseIDelete(String[] firstLine, String[] secondLine) {
-		
-		String fileToDelete = secondLine[0];
-		int repDegree = DatabaseManager.getMaxRepDegree(dbConnection, fileToDelete);
-		delete(fileToDelete,repDegree);
-	}
-
-
 	private String parseStored(String[] lines) {
 		String fileID = lines[0];
 		Integer chunkNo = Integer.valueOf(lines[1]);
@@ -343,7 +299,15 @@ public class HandleMessage implements Runnable {
 		int nChunk = Integer.parseInt(header[4]);
 		int repDeg = Integer.parseInt(header[5]);
 
-		Path path = PeerMain.getPath().resolve(IDfile + "_" + nChunk);
+		Path pathfile = PeerMain.getPath().resolve("backup/" + IDfile);
+		if(!Files.exists(pathfile)) {
+			try {
+				Files.createDirectory(pathfile);
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+		}
+		Path path = PeerMain.getPath().resolve("backup/" + IDfile + "/chunk" + nChunk);
 
 		Peer peerRequesting = new Peer(id,address,port);
 		DatabaseManager.storePeer(dbConnection, peerRequesting);
@@ -402,7 +366,16 @@ public class HandleMessage implements Runnable {
 		int nChunk = Integer.parseInt(header[4]);
 		int repDeg = Integer.parseInt(header[5]);
 
-		Path path = PeerMain.getPath().resolve(IDfile + "_" + nChunk);
+		Path pathfile = PeerMain.getPath().resolve("backup/" + IDfile);
+		if(!Files.exists(pathfile)) {
+			try {
+				Files.createDirectory(pathfile);
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+		}
+		Path path = PeerMain.getPath().resolve("backup/" + IDfile + "/chunk" + nChunk);
+		
 		if(DatabaseManager.checkResponsible(dbConnection, IDfile)) {
 			Peer predecessor = (Peer) chordManager.getPredecessor();
 			String msg = CreateMsg.getStored(myPeerID, IDfile, nChunk, 0);
