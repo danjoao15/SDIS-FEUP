@@ -384,16 +384,7 @@ public class DatabaseManager {
 			System.err.println(e.getMessage());
 		}
 	}
-	
-	/*public static void deleteBackupRequest(Connection c, String fileId) {
-		try {
-			PreparedStatement s = c.prepareStatement("DELETE FROM BACKUPSREQUESTED WHERE fileid = ?");
-			s.setString(1, fileId);
-			s.executeUpdate();
-		} catch (SQLException e) {
-			System.err.println(e.getMessage());
-		}
-	}*/
+
 	
 	public static ArrayList<String> getFilesDelete(Connection c, Timestamp t) {
 		ArrayList<String> files = new ArrayList<String>();

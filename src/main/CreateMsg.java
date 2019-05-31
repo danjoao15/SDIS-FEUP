@@ -135,15 +135,6 @@ public class CreateMsg {
 		}
 	}
 
-	
-	/*public static String getIDelete(String senderId, String fileId) {
-		String msg = getFirstLine(MsgType.IDELETE, "1.0",senderId);
-		return appendLine(msg, new Object[] {fileId});
-	}
-	public static String getDelete(String senderId, String fileId, int repDegree) {
-		String msg = getFirstLine(MsgType.DELETE, "1.0",senderId);
-		return appendLine(msg, new Object[] {fileId, repDegree});
-	}*/
 
 	public static String getPing(String senderId) {
 		return getHeader(MsgType.PING,"1.0",senderId);

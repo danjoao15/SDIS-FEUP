@@ -82,32 +82,7 @@ public class IOManager{
 			System.out.println("Backup your files before restoring");
 		}
 	}
-	
-	/*private static void delete(Scanner scan, PeerMain peer) {
-		ArrayList<Backup> requests = DatabaseManager.getRequestedBackups(peer.getConnection());
-		if (requests.size() > 0) {
-			int option = -1;
-			do {
-				System.out.println("Choose the file you want to delete:");
-				for (int i = 0; i < requests.size(); i++) {
-					System.out.println(i + ". " + requests.get(i).getname() + " - " + requests.get(i).getid());
-				}
-				try {
-					option = scan.nextInt();
-				}catch(InputMismatchException e) {
-					System.out.println("Invalid Option");
-					scan.nextLine();
-				}
-			} while(option < 0 || option >=requests.size());
-			peer.delete(requests.get(option).getid());
-			
-		} else {
-			System.out.println("Backup your files before deleting");
-		}
-		
 
-	}
-*/
 	private static void backup(Scanner scan, PeerMain peer) {
 		System.out.println("FileName:");
 		String name;

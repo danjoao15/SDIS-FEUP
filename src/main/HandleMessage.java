@@ -247,45 +247,6 @@ public class HandleMessage implements Runnable {
 		return null;
 	}
 
-
-	/*private void delete(String file, int repDeg) {
-		System.out.println("Delete file: " + file + ". Replication Degree: " + repDeg);
-		boolean isFileStored = DatabaseManager.checkFile(dbConnection, file);
-		if (isFileStored) {
-			ArrayList<Chunk> chunks = DatabaseManager.getFileChunks(dbConnection, file);
-			chunks.forEach(chunk -> {
-				Loggs.delete(PeerMain.getPath().resolve(chunk.getinfo()));
-				PeerMain.decreaseStorageUsed(chunk.getsize());
-			});
-			DatabaseManager.deleteFile(dbConnection, file);
-			repDeg--;
-			Loggs.LOG.info("Deleted file: " + file);
-		}
-		
-		if (repDeg > 0 || !isFileStored) {
-			System.out.println("Deleting from peer: " + peer.getChordManager().getSuccessor(0).getId());
-			String message = CreateMsg.getDelete(myPeerID, file, repDeg);
-			PeerI successor = peer.getChordManager().getSuccessor(0);
-			Client.sendMsg(successor.getAddress(), successor.getPort(), message, false);
-			Loggs.LOG.info("Forwarded delete: " + file);
-		}
-		
-	}
-	
-	private void parseDelete(String [] secondLine) {
-		String fileToDelete = secondLine[0].trim();
-		int repDegree = Integer.parseInt(secondLine[1]);
-		if (DatabaseManager.checkResponsible(dbConnection, fileToDelete)) return;
-		delete(fileToDelete,repDegree);
-	}
-	private void parseIDelete(String[] firstLine, String[] secondLine) {
-		
-		String fileToDelete = secondLine[0];
-		int repDegree = DatabaseManager.getMaxRepDegree(dbConnection, fileToDelete);
-		delete(fileToDelete,repDegree);
-	}
-
-*/
 	private String parseStored(String[] lines) {
 		Loggs.LOG.info("Stored Received");
 		String fileID = lines[0];
