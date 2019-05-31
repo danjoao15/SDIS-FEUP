@@ -192,8 +192,6 @@ public class HandleMessage implements Runnable {
 			e.printStackTrace();
 			return null;
 		}
-
-
 		AsynchronousFileChannel channel;
 		try {
 			channel = AsynchronousFileChannel.open(filepath,StandardOpenOption.WRITE);
@@ -218,7 +216,6 @@ public class HandleMessage implements Runnable {
 		src.put(body_bytes);
 		src.flip();
 		channel.write(src, chunkNo*Loggs.MAX_CHUNK_SIZE, src, writter);
-
 		return null;
 	}
 
@@ -383,7 +380,7 @@ public class HandleMessage implements Runnable {
 		} else {
 			String msg = CreateMsg.getKeepChunk(id, address, port, IDfile, nChunk, repDeg, body_bytes);
 			Client.sendMsg(chordManager.getSuccessor(0).getAddress(),chordManager.getSuccessor(0).getPort(), msg, false);
-			Loggs.LOG.warning("max capacity eclipsed");
+			Loggs.LOG.warning("capacity eclipsed");
 
 		}
 	}

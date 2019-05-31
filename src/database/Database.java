@@ -11,7 +11,7 @@ import util.Loggs;
 
 public class Database {
 
-	private String db = "localDB";
+	private String db = "database_";
 	private String initsql = "launchdatabase.sql";
 	private String driver = "org.apache.derby.jdbc.EmbeddedDriver";
 	private String curl = "jdbc:derby:" + db + ";create=true";
@@ -19,7 +19,7 @@ public class Database {
 	private Connection c = null;
 
 	public Database(String s){
-		db = "localDB" + s;
+		db = "database_" + s;
 		curl = "jdbc:derby:" + db + ";create=true";
 		connect();
 		if (!dbexists()) {

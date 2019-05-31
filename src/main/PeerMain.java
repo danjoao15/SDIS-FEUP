@@ -55,7 +55,7 @@ public class PeerMain {
 		}
 		Integer port = Integer.valueOf(args[0]);
 		ManageChord chordManager = new ManageChord(port);
-		System.out.println("Your ID: " + chordManager.getPeerInfo().getId());
+		System.out.println("peer id - " + chordManager.getPeerInfo().getId());
 		generatePath(chordManager.getPeerInfo().getId());
 
 		Server server;
@@ -127,6 +127,17 @@ public class PeerMain {
 		PeerMain.path = p;
 	}
 
+	/*
+ * 
+ * 
+ * 
+ * 
+ * 
+ * 
+ * 
+ * 
+ * 
+ * ****/
 	public static void generatePath(String id) {
 		setPath(Paths.get("peer_" + id));
 		if(!Files.exists(getPath())) {
@@ -137,7 +148,19 @@ public class PeerMain {
 			}
 		}
 	}
-
+/*
+ * 
+ * 
+ * 
+ * 
+ * 
+ * 
+ * 
+ * 
+ * 
+ * 
+ * 
+ * */
 	public static boolean capacityExceeded(int amount) {
 		if(usedStorage + amount > storageCapacity) {
 			return true;

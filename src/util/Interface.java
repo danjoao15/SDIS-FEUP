@@ -60,6 +60,29 @@ public class Interface{
 		}
 		
 	}
+
+	private static void backup(Scanner scan, PeerMain peer) {
+		System.out.println("input file name");
+		String name;
+		name = scan.next();
+		if(!Files.exists(Paths.get(name))) {
+			System.out.println("file not found");
+			return;
+		}
+		Integer deg = 0;
+		do {
+			System.out.println("input desired replication degree");
+			try {
+				deg = scan.nextInt();
+			}catch(InputMismatchException e) {
+				System.out.println("invalid input");
+				scan.nextLine();
+			}
+		} while((deg < 1));
+			
+		peer.backup(name, deg,null);
+		System.out.println("backup request sent");
+	}
 	
 	private static void restore(Scanner scan, PeerMain peer) {
 		ArrayList<Backup> requests = DatabaseManager.getRequestedBackups(peer.getConnection());
@@ -100,29 +123,6 @@ public class Interface{
 			peer.delete(requests.get(option).getid());
 			
 		}
-	}
-
-	private static void backup(Scanner scan, PeerMain peer) {
-		System.out.println("input file name");
-		String name;
-		name = scan.next();
-		if(!Files.exists(Paths.get(name))) {
-			System.out.println("file not found");
-			return;
-		}
-		Integer deg = 0;
-		do {
-			System.out.println("input desired replication degree");
-			try {
-				deg = scan.nextInt();
-			}catch(InputMismatchException e) {
-				System.out.println("invalid input");
-				scan.nextLine();
-			}
-		} while((deg < 1));
-			
-		peer.backup(name, deg,null);
-		System.out.println("backup request sent");
 	}
 	
 
