@@ -20,10 +20,10 @@ public class Getchunk implements Runnable {
 	}
 
 	@Override
-	public void run() {
+	public void run() {/*
 		Peer owner = chord.getChunkOwner(request.getname());
 		String getChunkMessage = CreateMsg.getGetChunk(chord.getPeerInfo().getId(), chord.getPeerInfo().getAddress(),chord.getPeerInfo().getPort(), this.request.getname(), this.nChunk);
 		Client.sendMsg(owner.getAddress(), owner.getPort(), getChunkMessage, false);
-	}
+*/	}
 
 }

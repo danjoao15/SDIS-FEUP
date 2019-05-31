@@ -103,7 +103,7 @@ public class HandleMessage implements Runnable {
 			response = parseStored(secondLine);
 			break;
 		case GETCHUNK:
-			response = parseGetChunk(secondLine);
+//			response = parseGetChunk(secondLine);
 			break;
 		case CHUNK:
 			response = parseChunk(secondLine,thirdLine);
@@ -209,31 +209,6 @@ public class HandleMessage implements Runnable {
 		src.put(body_bytes);
 		src.flip();
 		channel.write(src, chunkNo*Loggs.MAX_CHUNK_SIZE, src, writter);
-		return null;
-	}
-
-	private String parseGetChunk(String[] secondLine) {
-		InetAddress address;
-		try {
-			address = InetAddress.getByName(secondLine[0]);
-		} catch (UnknownHostException e) {
-			e.printStackTrace();
-			return null;
-		}
-		Integer port = Integer.valueOf(secondLine[1]);
-		String fileID = secondLine[2];
-		Integer chunkNo = Integer.valueOf(secondLine[3]);
-
-		Chunk chunkInfo = new Chunk(chunkNo, fileID);
-		if(DatabaseManager.checkChunkStored(dbConnection, chunkInfo )) {
-			String body = Loggs.read(PeerMain.getPath().resolve(chunkInfo.getinfo()).toString());
-			String msg = CreateMsg.getChunk(this.myPeerID, fileID, chunkNo, body.getBytes(StandardCharsets.ISO_8859_1));
-			Client.sendMsg(address, port, msg, false);
-		} else {
-			String msg = CreateMsg.getGetChunk(this.myPeerID, address, port, fileID, chunkNo);
-			Client.sendMsg(this.peer.getChordManager().getSuccessor(0).getAddress(),
-					this.peer.getChordManager().getSuccessor(0).getPort(), msg, false);
-		}
 		return null;
 	}
 

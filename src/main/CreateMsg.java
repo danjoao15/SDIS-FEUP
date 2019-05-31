@@ -117,11 +117,6 @@ public class CreateMsg {
 		String msg2 = appendLine(msg, new Object[] {IDfile, nChunk, repDeg});
 		return msg2;
 	}
-	public static String getGetChunk(String IDsender, InetAddress address, int port, String IDfile, int nChunk) {
-		String msg = getFirstLine(MsgType.GETCHUNK,"1.0",IDsender);
-		String msg2 = appendLine(msg, new Object[] {address.getHostAddress(), port, IDfile, nChunk});
-		return msg2;
-	}
 	public static String getChunk(String IDsender, String fileID, int nChunk, byte[] body) {
 		String msg = getFirstLine(MsgType.CHUNK,"1.0",IDsender);
 		String msg2 = appendLine(msg, new Object[] {fileID, nChunk});
