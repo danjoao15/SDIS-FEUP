@@ -21,7 +21,7 @@ public class Interface{
 		while(true) {
 			System.out.println("input number correspondant to desired action");
 			System.out.println("1 - backup file");
-			System.out.println("2 - restore file");
+//			System.out.println("2 - restore file");
 			System.out.println("0 - end program");
 			Scanner scan = new Scanner(System.in);
 			Integer option = null;
@@ -37,11 +37,11 @@ public class Interface{
 				Interface.backup(scan, peer);
 				break;
 			}
-			case 2:{
+/*			case 2:{
 				Interface.restore(scan, peer);
 				break;
 			}
-			case 0:{
+*/			case 0:{
 				scan.close();
 				Thread.currentThread().interrupt();
 				return;
@@ -77,7 +77,7 @@ public class Interface{
 		peer.backup(name, deg,null);
 		System.out.println("backup request sent");
 	}
-	
+/*	
 	private static void restore(Scanner scan, PeerMain peer) {
 		ArrayList<Backup> requests = DatabaseManager.getRequestedBackups(peer.getConnection());
 		if (requests.size() > 0) {
@@ -97,6 +97,6 @@ public class Interface{
 			peer.restore(requests.get(option));
 		}
 	}
-	
+	*/
 
 }

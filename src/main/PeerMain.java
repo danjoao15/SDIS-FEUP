@@ -35,7 +35,7 @@ public class PeerMain {
 
 
 	public PeerMain(ManageChord chordManager, Server server, Database database) {
-		
+
 		this.chordManager = chordManager;
 		this.server = server;
 		this.database = database;
@@ -77,7 +77,7 @@ public class PeerMain {
 			port = Integer.valueOf(args[2]);
 		}
 		peer.joinNetwork(addr, port);
-		
+
 		Interface readInputThread = new Interface(peer);
 		readInputThread.run();
 		server.closeConnection();
@@ -91,7 +91,7 @@ public class PeerMain {
 		if(addr != null) {
 			chordManager.join(addr, port);
 		}
-		
+
 		SingletonThreadPoolExecutor.getInstance().get().execute(server);
 		SingletonThreadPoolExecutor.getInstance().get().execute(chordManager);
 
@@ -201,11 +201,11 @@ public class PeerMain {
 			SingletonThreadPoolExecutor.getInstance().get().execute(th);
 		}
 	}
-	
+
 	public Database getDatabase() {
 		return database;
 	}
-	
+
 	public void sendResponsability() {
 		ArrayList<Stored> filesIAmResponsible = DatabaseManager.getFiles(this.database.getConnection());
 		ArrayList<Stored> toSend = new ArrayList<Stored> ();

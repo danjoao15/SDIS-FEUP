@@ -11,11 +11,9 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.FileAlreadyExistsException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
 import java.sql.Connection;
 import java.util.ArrayDeque;
-import java.util.ArrayList;
 import java.util.Deque;
 
 import javax.net.ssl.SSLSocket;
@@ -104,8 +102,8 @@ public class HandleMessage implements Runnable {
 		case STORED:
 			response = parseStored(secondLine);
 			break;
-		case GETCHUNK: 
-			response = parseGetChunk(secondLine);
+		case GETCHUNK:
+//			response = parseGetChunk(secondLine);
 			break;
 		case CHUNK:
 			response = parseChunk(secondLine,thirdLine);
@@ -121,13 +119,13 @@ public class HandleMessage implements Runnable {
 		}
 		return response;
 	}
-	
+
 	private void parseConfirmStored(String[] secondLine) {
 		String fileId = secondLine[0];
 		Integer chunkNo = Integer.parseInt(secondLine[1]);
 		Integer repDegree = Integer.parseInt(secondLine[2]);
 		Loggs.LOG.info("chunk " + fileId + " - " + chunkNo + " saved with repdeg=" + repDegree);
-		
+
 	}
 
 	private String parseResponsible(String[] lines) {
@@ -174,9 +172,9 @@ public class HandleMessage implements Runnable {
 
 		Backup b = DatabaseManager.getBackup(dbConnection, file_id);
 
-		
+
 		Encryption conf = new Encryption(b.getkey());
-		
+
 		body_bytes = conf.decryptation(body_bytes);
 		Path filepath = PeerMain.getPath().resolve("restore file - " + b.getname());
 
@@ -214,42 +212,17 @@ public class HandleMessage implements Runnable {
 		return null;
 	}
 
-	private String parseGetChunk(String[] secondLine) {
-		InetAddress address;
-		try {
-			address = InetAddress.getByName(secondLine[0]);
-		} catch (UnknownHostException e) {
-			e.printStackTrace();
-			return null;
-		}
-		Integer port = Integer.valueOf(secondLine[1]);
-		String fileID = secondLine[2];
-		Integer chunkNo = Integer.valueOf(secondLine[3]);
-
-		Chunk chunkInfo = new Chunk(chunkNo, fileID);
-		if(DatabaseManager.checkChunkStored(dbConnection, chunkInfo )) {
-			String body = Loggs.read(PeerMain.getPath().resolve(chunkInfo.getinfo()).toString());
-			String msg = CreateMsg.getChunk(this.myPeerID, fileID, chunkNo, body.getBytes(StandardCharsets.ISO_8859_1));
-			Client.sendMsg(address, port, msg, false);
-		} else {
-			String msg = CreateMsg.getGetChunk(this.myPeerID, address, port, fileID, chunkNo);
-			Client.sendMsg(this.peer.getChordManager().getSuccessor(0).getAddress(),
-					this.peer.getChordManager().getSuccessor(0).getPort(), msg, false);
-		}
-		return null;
-	}
-
 	private String parseStored(String[] lines) {
 		String fileID = lines[0];
 		Integer chunkNo = Integer.valueOf(lines[1]);
 		Integer repDeg = Integer.valueOf(lines[2]);
-		
+
 		boolean Responsible = DatabaseManager.checkResponsible(dbConnection, fileID);
 		Chunk chunkInfo = new Chunk(chunkNo,fileID);
 		boolean chunkExist = DatabaseManager.checkChunkStored(dbConnection, chunkInfo);
-		
+
 		if(Responsible) {
-			
+
 			Peer peerRequested = DatabaseManager.getRequestingPeer(dbConnection, fileID);
 			if(chunkExist) {
 				repDeg++;
@@ -260,7 +233,7 @@ public class HandleMessage implements Runnable {
 				chunkInfo.setsize(-1);
 				DatabaseManager.storeChunk(dbConnection, chunkInfo);
 			}
-			
+
 			if(peerRequested != null) {
 				String msg = CreateMsg.getConfirmStored(myPeerID, fileID, chunkNo, repDeg);
 				Client.sendMsg(peerRequested.getAddress(), peerRequested.getPort(), msg, false);
@@ -317,7 +290,7 @@ public class HandleMessage implements Runnable {
 		fileInfo.setpeer(peerRequesting.getId());
 		fileInfo.setrepdegree(repDeg);
 		DatabaseManager.storeFile(dbConnection, fileInfo);
-		
+
 		if(id.equals(myPeerID)) {
 			DatabaseManager.setStoring(dbConnection, fileInfo.getfile(), false);
 			Peer nextPeer = chordManager.getSuccessor(0);
@@ -331,7 +304,7 @@ public class HandleMessage implements Runnable {
 			try {
 				Loggs.write(path, body_bytes);
 				DatabaseManager.storeChunk(dbConnection, new Chunk(nChunk,IDfile, body_bytes.length));
-				
+
 			} catch (IOException e) {
 				e.printStackTrace();
 			}
@@ -376,10 +349,8 @@ public class HandleMessage implements Runnable {
 				e.printStackTrace();
 			}
 		}
+		Path path = PeerMain.getPath().resolve("backup/" + IDfile + "/chunk" + nChunk);
 
-		Path path = PeerMain.getPath().resolve("backup/" + IDfile + "/chunk_" + nChunk);
-		
-		
 		if(DatabaseManager.checkResponsible(dbConnection, IDfile)) {
 			Peer predecessor = (Peer) chordManager.getPredecessor();
 			String msg = CreateMsg.getStored(myPeerID, IDfile, nChunk, 0);
