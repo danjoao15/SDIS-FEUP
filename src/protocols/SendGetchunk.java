@@ -1,7 +1,7 @@
 package protocols;
 
 import chordSetup.ManageChord;
-import chordSetup.PeerI;
+import chordSetup.Peer;
 import database.Backup;
 import main.Client;
 import main.CreateMsg;
@@ -21,7 +21,7 @@ public class SendGetchunk implements Runnable {
 
 	@Override
 	public void run() {
-		PeerI owner = chord.getChunkOwner(request.getname());
+		Peer owner = chord.getChunkOwner(request.getname());
 		String getChunkMessage = CreateMsg.getGetChunk(chord.getPeerInfo().getId(), chord.getPeerInfo().getAddress(),chord.getPeerInfo().getPort(), this.request.getname(), this.nChunk);
 		Client.sendMsg(owner.getAddress(), owner.getPort(), getChunkMessage, false);
 	}

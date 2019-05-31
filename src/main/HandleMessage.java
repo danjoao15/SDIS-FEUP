@@ -21,7 +21,7 @@ import javax.net.ssl.SSLSocket;
 
 import chordSetup.AbstractPeer;
 import chordSetup.ManageChord;
-import chordSetup.PeerI;
+import chordSetup.Peer;
 import database.Backup;
 import database.Chunk;
 import database.DatabaseManager;
@@ -149,7 +149,7 @@ public class HandleMessage implements Runnable {
 	}
 
 	private void parseSuccessors(String[] secondLine) {
-		Deque<PeerI> peersReceived = new ArrayDeque<PeerI>();
+		Deque<Peer> peersReceived = new ArrayDeque<Peer>();
 		int numberOfSuccessorsReceived = secondLine.length / 3;
 		for (int i = 0; i < numberOfSuccessorsReceived; i++) {
 			String peerId = secondLine[i*3];
@@ -160,7 +160,7 @@ public class HandleMessage implements Runnable {
 				e.printStackTrace();
 			}
 			Integer port = Integer.parseInt(secondLine[i*3+2]);
-			peersReceived.add(new PeerI(peerId,peerAddr,port));
+			peersReceived.add(new Peer(peerId,peerAddr,port));
 		}
 		peer.getChordManager().updateNextPeers(peersReceived);
 	}
@@ -265,7 +265,7 @@ public class HandleMessage implements Runnable {
 		if (repDeg > 0 || !isFileStored) {
 			System.out.println("Deleting from peer: " + peer.getChordManager().getSuccessor(0).getId());
 			String message = CreateMsg.getDelete(myPeerID, file, repDeg);
-			PeerI successor = peer.getChordManager().getSuccessor(0);
+			Peer successor = peer.getChordManager().getSuccessor(0);
 			Client.sendMsg(successor.getAddress(), successor.getPort(), message, false);
 			Loggs.LOG.info("Forwarded delete: " + file);
 		}
@@ -298,7 +298,7 @@ public class HandleMessage implements Runnable {
 		
 		if(Responsible) {
 			
-			PeerI peerRequested = DatabaseManager.getRequestingPeer(dbConnection, fileID);
+			Peer peerRequested = DatabaseManager.getRequestingPeer(dbConnection, fileID);
 			if(chunkExist) {
 				repDeg++;
 				chunkInfo.setrepdegree(repDeg);
@@ -349,17 +349,16 @@ public class HandleMessage implements Runnable {
 
 		Path path = PeerMain.getPath().resolve(IDfile + "_" + nChunk);
 
-		PeerI peerRequesting = new PeerI(id,address,port);
+		Peer peerRequesting = new Peer(id,address,port);
 		DatabaseManager.storePeer(dbConnection, peerRequesting);
 		Stored fileInfo = new Stored(IDfile, true);
 		fileInfo.setpeer(peerRequesting.getId());
 		fileInfo.setrepdegree(repDeg);
 		DatabaseManager.storeFile(dbConnection, fileInfo);
 		
-
 		if(id.equals(myPeerID)) {
 			DatabaseManager.setStoring(dbConnection, fileInfo.getfile(), false);
-			PeerI nextPeer = chordManager.getSuccessor(0);
+			Peer nextPeer = chordManager.getSuccessor(0);
 			String msg = CreateMsg.getKeepChunk(id, address, port, IDfile, nChunk, repDeg, body_bytes);
 			Client.sendMsg(nextPeer.getAddress(),nextPeer.getPort(), msg, false);
 			return;
@@ -410,7 +409,7 @@ public class HandleMessage implements Runnable {
 		Path path = PeerMain.getPath().resolve(IDfile + "_" + nChunk);
 		if(DatabaseManager.checkResponsible(dbConnection, IDfile)) {
 			Loggs.LOG.info("KeepChunk: I am responsible ");
-			PeerI predecessor = (PeerI) chordManager.getPredecessor();
+			Peer predecessor = (Peer) chordManager.getPredecessor();
 			String msg = CreateMsg.getStored(myPeerID, IDfile, nChunk, 0);
 			Client.sendMsg(predecessor.getAddress(), predecessor.getPort(), msg, false);
 			return;
@@ -418,7 +417,7 @@ public class HandleMessage implements Runnable {
 		if(id_request.equals(myPeerID)) {
 			Loggs.LOG.info("I am responsible");
 			
-			PeerI nextPeer = chordManager.getSuccessor(0);
+			Peer nextPeer = chordManager.getSuccessor(0);
 			String message = CreateMsg.getKeepChunk(id_request, address_request, port_request, IDfile, nChunk, repDeg, body_bytes);
 			Client.sendMsg(nextPeer.getAddress(),nextPeer.getPort(), message, false);
 			return;
@@ -454,11 +453,11 @@ public class HandleMessage implements Runnable {
 		String id = firstLine[2];
 		InetAddress address = socket.getInetAddress();
 		int port = Integer.parseInt(secondLine[0].trim());
-		PeerI potentialPredecessor = new PeerI(id, address, port);
+		Peer potentialPredecessor = new Peer(id, address, port);
 		if (potentialPredecessor.getId() == myPeerID) return;
 		AbstractPeer previousPredecessor = peer.getChordManager().getPredecessor();
 		if (previousPredecessor.isNull() || Loggs.inTheMiddle(previousPredecessor.getId(), myPeerID, potentialPredecessor.getId())) {
-			PeerI newPredecessor = potentialPredecessor;
+			Peer newPredecessor = potentialPredecessor;
 			Loggs.LOG.info("Update predecessor to " + newPredecessor.getId());
 			this.peer.getChordManager().setPredecessor(newPredecessor);
 			Loggs.LOG.info("Update predecessor, sending responsibility");

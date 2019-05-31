@@ -17,7 +17,7 @@ public class Stabilize implements Runnable {
 			response = response.trim();
 			String[] args = response.split("\r\n")[1].split(" ");
 			if (args.length == 3) {
-				return new PeerI(response);
+				return new Peer(response);
 			}
 		}catch(Exception e) {
 			e.printStackTrace();
@@ -30,7 +30,7 @@ public class Stabilize implements Runnable {
 		try {
 			String myPeerId = this.chordManager.getPeerInfo().getId();
 			Loggs.LOG.finest("Running Stabilize\n");
-			PeerI nextPeer = this.chordManager.getNextPeer();
+			Peer nextPeer = this.chordManager.getNextPeer();
 			String stabilizeMessage = CreateMsg.getHeader(MsgType.STABILIZE, "1.0", myPeerId);
 			String response = Client.sendMsg(nextPeer.getAddress(), nextPeer.getPort(), stabilizeMessage, true);
 			if(response == null) {

@@ -20,40 +20,40 @@ public class IOManager{
 	
 	public void run() {
 		while(true) {
-			System.out.println("Select a Protocol: ");
-			System.out.println("\t0. Terminate Program");
-			System.out.println("\t1. Backup File");
-			System.out.println("\t2. Restore File");
-			System.out.println("\t3. Delete File");
+			System.out.println("Action Selector:");
+			System.out.println("0 - backup file");
+			System.out.println("1 - restore file");
+			System.out.println("2 - delete file");
+			System.out.println("3 - end program");
 			Scanner scan = new Scanner(System.in);
 			Integer option = null;
 			try {
 				option = scan.nextInt();
 			}catch(InputMismatchException e) {
-				System.out.println("Invalid Option");
+				System.out.println("invalid option");
 				scan.nextLine();
 				continue;
 			}
 			switch (option) {
 			case 0:{
+				IOManager.backup(scan, peer);
+				break;
+			}
+			case 1:{
+				IOManager.restore(scan, peer);
+				break;
+			}
+			case 2:{
+				IOManager.delete(scan, peer);
+				break;
+			}
+			case 3:{
 				scan.close();
 				Thread.currentThread().interrupt();
 				return;
 			}
-			case 1:{
-				IOManager.backup(scan, peer);
-				break;
-			}
-			case 2:{
-				IOManager.restore(scan, peer);
-				break;
-			}
-			case 3:{
-				IOManager.delete(scan, peer);
-				break;
-			}
 			default: {
-				System.out.println("Invalid Option!");
+				System.out.println("please choose a valid option");
 				continue;
 			}
 			}
@@ -104,8 +104,6 @@ public class IOManager{
 		} else {
 			System.out.println("Backup your files before deleting");
 		}
-		
-
 	}
 
 	private static void backup(Scanner scan, PeerMain peer) {

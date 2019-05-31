@@ -6,7 +6,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 
-import chordSetup.PeerI;
+import chordSetup.Peer;
 import database.Stored;
 
 public class CreateMsg {
@@ -58,11 +58,11 @@ public class CreateMsg {
 		return msg;
 	}
 	
-	public static String getSuccessors(String senderId, List<PeerI> list) {
+	public static String getSuccessors(String senderId, List<Peer> list) {
 		String msg = getFirstLine(MsgType.SUCCESSORS,"2.0",senderId);
 		Object[] objectArray = new Object[list.size() * 3];
 		for (int i = 0; i < list.size(); i++) {
-			PeerI nextPeer = list.get(i);
+			Peer nextPeer = list.get(i);
 			objectArray[i*3] = nextPeer.getId();
 			objectArray[i*3 + 1] = nextPeer.getAddress().getHostAddress();
 			objectArray[i*3 + 2] = nextPeer.getPort();
@@ -70,17 +70,17 @@ public class CreateMsg {
 		return appendLine(msg, objectArray);
 	}
 	
-	public static String getSuccessor(String senderId, PeerI peer) {
+	public static String getSuccessor(String senderId, Peer peer) {
 		String msg = getFirstLine(MsgType.SUCCESSOR,"1.0",senderId);
 		return appendLine(msg, new Object[] {peer.getId(),peer.getAddress().getHostAddress(),peer.getPort()});
 	}
 	
 	
-	public static String getPredecessor(String IDsender, PeerI peer) {
+	public static String getPredecessor(String IDsender, Peer peer) {
 		String msg = getFirstLine(MsgType.PREDECESSOR,"1.0",IDsender);
 		return appendLine(msg, new Object[] {peer.getId(),peer.getAddress().getHostAddress(),peer.getPort()});
 	}
-	public static String getAsk(String IDsender, PeerI peer) {
+	public static String getAsk(String IDsender, Peer peer) {
 		String msg = getFirstLine(MsgType.ASK,"1.0",IDsender);
 		return appendLine(msg, new Object[] {peer.getId(),peer.getAddress().getHostAddress(),peer.getPort()});
 	}

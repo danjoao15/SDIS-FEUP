@@ -4,7 +4,7 @@ import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.sql.*;
 import java.util.ArrayList;
-import chordSetup.PeerI;
+import chordSetup.Peer;
 import main.Leases;
 import util.Loggs;
 import org.apache.derby.shared.common.error.DerbySQLIntegrityConstraintViolationException;
@@ -13,7 +13,7 @@ import org.apache.derby.shared.common.error.DerbySQLIntegrityConstraintViolation
 
 public class DatabaseManager {
 
-	public static void storePeer(Connection c, PeerI peer) {
+	public static void storePeer(Connection c, Peer peer) {
 		try {
 			PreparedStatement s = c.prepareStatement("INSERT INTO PEERS (peerid,ip,port) VALUES (?,?,?)");
 			s.setString(1, peer.getId());
@@ -30,7 +30,7 @@ public class DatabaseManager {
 		}
 	}
 	
-	private static void updatePeer(Connection c, PeerI peer) {
+	private static void updatePeer(Connection c, Peer peer) {
 		try {
 			PreparedStatement s = c.prepareStatement("UPDATE PEERS SET ip = ?, port = ? WHERE peerid = ?");
 			s.setString(1, peer.getAddress().getHostAddress());
@@ -245,8 +245,8 @@ public class DatabaseManager {
 	public static ArrayList<Backup> getRequestedBackups(Connection c){
 		ArrayList<Backup> a = new ArrayList<Backup>();
 		try {
-			PreparedStatement s = c.prepareStatement("SELECT fileid, filename, desiredrepdeg, encrypt_key, chunksNum FROM BACKUPSREQUESTED");
-			ResultSet set = s.executeQuery();
+			Statement s = c.createStatement();
+			ResultSet set = s.executeQuery("SELECT fileid, filename, desiredrepdeg, encrypt_key, chunksNum FROM BACKUPSREQUESTED");
 			while (set.next()) {
 				Backup currentBackupRequest = new Backup(set.getString(1),
 						set.getString(2),
@@ -261,7 +261,7 @@ public class DatabaseManager {
 		return a;
 	}
 	
-	public static PeerI getRequestingPeer(Connection c, String fileId) {
+	public static Peer getRequestingPeer(Connection c, String fileId) {
 		try {
 			PreparedStatement s = c.prepareStatement("SELECT peerid,ip,port FROM PEERS JOIN (SELECT requestingpeer FROM FILESSTORED WHERE fileid = ?) AS F ON PEERS.peerid = F.requestingpeer");
 			s.setString(1, fileId);
@@ -274,7 +274,7 @@ public class DatabaseManager {
 					e.printStackTrace();
 					return null;
 				}
-				return new PeerI(set.getString(1),a,set.getInt(3));
+				return new Peer(set.getString(1),a,set.getInt(3));
 			}
 		} catch (SQLException e) {
 			System.err.println(e.getMessage());
@@ -426,10 +426,9 @@ public class DatabaseManager {
 	
 	public static ArrayList<Backup> getFilesUpdate(Connection c) {
 		ArrayList<Backup> files = new ArrayList<Backup>();
-		PreparedStatement s;
 		try {
-			s = c.prepareStatement("SELECT * FROM BACKUPSREQUESTED");
-			ResultSet result = s.executeQuery();
+			Statement s = c.createStatement();
+			ResultSet result = s.executeQuery("SELECT * FROM BACKUPSREQUESTED");
 			while (result.next()) {
 				files.add(new Backup(
 						result.getString("fileid"),
@@ -447,10 +446,9 @@ public class DatabaseManager {
 	
 	public static ArrayList<Stored> getFiles(Connection c) {
 		ArrayList<Stored> files = new ArrayList<Stored>();
-		PreparedStatement s;
 		try {
-			s = c.prepareStatement("SELECT * FROM FILESSTORED WHERE responsible");
-			ResultSet result = s.executeQuery();
+			Statement s = c.createStatement();
+			ResultSet result = s.executeQuery("SELECT * FROM FILESSTORED WHERE responsible");
 			while (result.next()) {
 				files.add(new Stored(
 						result.getString("fileid"), 

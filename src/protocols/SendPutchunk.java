@@ -3,7 +3,7 @@ package protocols;
 import java.util.Arrays;
 
 import chordSetup.ManageChord;
-import chordSetup.PeerI;
+import chordSetup.Peer;
 import main.Client;
 import main.CreateMsg;
 
@@ -27,7 +27,7 @@ public class SendPutchunk implements Runnable {
 	}
 	@Override
 	public void run() {
-		PeerI owner = chord.getChunkOwner(IDfile);
+		Peer owner = chord.getChunkOwner(IDfile);
 		String putChunkMessage = CreateMsg.getPutChunk(IDsender, owner.getAddress(),owner.getPort(), this.IDfile, this.nChunk, this.repDeg, this.body);
 		Client.sendMsg(owner.getAddress(), owner.getPort(), putChunkMessage, false);
 

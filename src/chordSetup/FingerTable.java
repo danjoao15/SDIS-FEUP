@@ -8,7 +8,7 @@ import main.MsgType;
 import util.Loggs;
 
 
-public class FingerTableFixer implements Runnable {
+public class FingerTable implements Runnable {
 
 	private ManageChord chord;
 	
@@ -28,11 +28,11 @@ public class FingerTableFixer implements Runnable {
 				String lookupMessage = CreateMsg.getLookup(chord.getPeerInfo().getId(), keyToLookup);
 				String response = chord.lookup(keyToLookup);
 				response = response.trim();
-				PeerI info = new PeerI(response);
+				Peer info = new Peer(response);
 				while(response.startsWith(MsgType.ASK.getType())) {
 					response = Client.sendMsg(info.getAddress(), info.getPort(), lookupMessage, true);
 					if (response == null) return;
-					info = new PeerI(response);
+					info = new Peer(response);
 				}
 				chord.getFingerTable().set(i, info);
 				
@@ -61,7 +61,7 @@ public class FingerTableFixer implements Runnable {
 		Loggs.LOG.finest("Tabela de dedos: " + chord.getPeerInfo().getId() + "\n" + m);
 	}
 	
-	public FingerTableFixer(ManageChord chord) {
+	public FingerTable(ManageChord chord) {
 		this.chord = chord;
 	}
 }

@@ -2,15 +2,15 @@ package chordSetup;
 
 import java.net.InetAddress;
 import java.net.UnknownHostException;
-public class PeerI extends AbstractPeer {
+public class Peer extends AbstractPeer {
 
-	public PeerI(String id, InetAddress address, Integer port) {
+	public Peer(String id, InetAddress address, Integer port) {
 		this.id = id;
 		this.address = address;
 		this.port = port;
 	}
 
-	public PeerI(String str) {
+	public Peer(String str) {
 		str = str.trim();
 		String[] attr = str.split("\r\n");
 
@@ -65,8 +65,8 @@ public class PeerI extends AbstractPeer {
 	public boolean equals(Object other){
 	    if (other == null) return false;
 	    if (other == this) return true;
-	    if (!(other instanceof PeerI))return false;
-	    PeerI otherPeer = (PeerI)other;
+	    if (!(other instanceof Peer))return false;
+	    Peer otherPeer = (Peer)other;
 	    if (otherPeer.getId().equals(this.id)) {
 	    	return true;
 	    }

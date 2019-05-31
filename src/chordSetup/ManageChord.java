@@ -24,11 +24,11 @@ public class ManageChord implements Runnable {
 
 	private static final int M = 32;
 	private static final int NEXT_PEERS_MAX_SIZE = 5;
-	private PeerI peerI;
-	private ArrayList<PeerI> fingerTable = new ArrayList<PeerI>();
+	private Peer peer;
+	private ArrayList<Peer> fingerTable = new ArrayList<Peer>();
 	private AbstractPeer predecessor;
 
-	private Deque<PeerI> nextPeers;
+	private Deque<Peer> nextPeers;
 
 	private String askMsg;
 	private String successorMsg;
@@ -54,11 +54,11 @@ public class ManageChord implements Runnable {
 
 		byte[] hash = msgDigest.digest(("" + address + port).getBytes(StandardCharsets.ISO_8859_1));
 		String id = Loggs.getIdFromHash(hash, M/8);
-		this.setPeerInfo(new PeerI(id, address, port));
+		this.setPeerInfo(new Peer(id, address, port));
 
 		askMsg = CreateMsg.getFirstLine(MsgType.ASK, "1.0", this.getPeerInfo().getId());
 		successorMsg = CreateMsg.getFirstLine(MsgType.SUCCESSOR, "1.0", this.getPeerInfo().getId());
-		nextPeers = new ConcurrentLinkedDeque<PeerI>();
+		nextPeers = new ConcurrentLinkedDeque<Peer>();
 
 		for (int i = 0; i < getM(); i++) {
 			fingerTable.add(getPeerInfo());
@@ -73,10 +73,10 @@ public class ManageChord implements Runnable {
 		Stabilize RebuildThread = new Stabilize(this);
 		SingletonThreadPoolExecutor.getInstance().get().scheduleAtFixedRate(RebuildThread, 10, 2500, TimeUnit.MILLISECONDS);
 
-		CheckPredecessor checkPredecessorThread = new CheckPredecessor(this);
+		Predecessor checkPredecessorThread = new Predecessor(this);
 		SingletonThreadPoolExecutor.getInstance().get().scheduleAtFixedRate(checkPredecessorThread, 1000, 10000, TimeUnit.MILLISECONDS);
 
-		FingerTableFixer fixFingerTableThread = new FingerTableFixer(this);
+		FingerTable fixFingerTableThread = new FingerTable(this);
 		SingletonThreadPoolExecutor.getInstance().get().scheduleAtFixedRate(fixFingerTableThread, 2000, 5000, TimeUnit.MILLISECONDS);
 
 	}
@@ -86,7 +86,7 @@ public class ManageChord implements Runnable {
 		lookupMsg = CreateMsg.appendLine(lookupMsg, new String[]{""+getPeerInfo().getId()});
 		String response = Client.sendMsg(address, port, lookupMsg, true);
 
-		PeerI nextPeer = new PeerI(response);
+		Peer nextPeer = new Peer(response);
 
 		while (response.startsWith("Ask")) {
 			response = Client.sendMsg(nextPeer.getAddress(), nextPeer.getPort(), lookupMsg, true);
@@ -95,15 +95,15 @@ public class ManageChord implements Runnable {
 				Loggs.LOG.severe("Can't join the network");
 				return;
 			}
-			nextPeer = new PeerI(response);
+			nextPeer = new Peer(response);
 		}
 		setNextPeer(nextPeer);
 	}
 
-	public void setNextPeer(PeerI nextPeer) {
+	public void setNextPeer(Peer nextPeer) {
 		if (nextPeer == null || nextPeer.isNull()) return;
 		this.getFingerTable().set(0, nextPeer);
-		PeerI first = this.nextPeers.peek();
+		Peer first = this.nextPeers.peek();
 		if (first != null) {
 			if (first.getId().equals(nextPeer.getId())) return;
 		}
@@ -111,7 +111,7 @@ public class ManageChord implements Runnable {
 	}
 
 	public void printNextPeers() {
-		Iterator<PeerI> it = nextPeers.iterator();
+		Iterator<Peer> it = nextPeers.iterator();
 		Loggs.LOG.info("Listing next peers");
 		while(it.hasNext()) {
 			Loggs.LOG.info(it.next().getId());
@@ -126,13 +126,13 @@ public class ManageChord implements Runnable {
 			}
 		}
 		if (fingerTable.size() != 0){ 
-			PeerI temp = fingerTable.get(0);
+			Peer temp = fingerTable.get(0);
 			if(temp == null) {
 				//System.out.println("Weird Stuff");
 			}
 			else {
 				String temp1 = temp.getId();
-				if (Loggs.inTheMiddle(peerI.getId(),
+				if (Loggs.inTheMiddle(peer.getId(),
 						temp1,
 						key)) {
 					return CreateMsg.appendLine(successorMsg, this.getFingerTable().get(0).asArray());
@@ -151,7 +151,7 @@ public class ManageChord implements Runnable {
 		String nextPeersMsg = null;
 		String fingerTableHighestId = null;
 		String nextPeersHighestId = null;
-		Iterator<PeerI> it = nextPeers.descendingIterator();
+		Iterator<Peer> it = nextPeers.descendingIterator();
 		AbstractPeer currentPeer;
 		for (int i = getM() - 1; i > 0; i--) {
 			currentPeer = this.getFingerTable().get(i);
@@ -177,7 +177,7 @@ public class ManageChord implements Runnable {
 		return null;
 	}
 
-	public void notify(PeerI newSuccessor) {
+	public void notify(Peer newSuccessor) {
 		String message = CreateMsg.getNotify(this.getPeerInfo().getId(), this.getPeerInfo().getPort());
 		String response = Client.sendMsg(newSuccessor.getAddress(), newSuccessor.getPort(), message, true);
 		if (response == null) {
@@ -186,9 +186,9 @@ public class ManageChord implements Runnable {
 		}
 	}
 
-	public PeerI getChunkOwner(String key) {
+	public Peer getChunkOwner(String key) {
 		if (Loggs.inTheMiddle(this.predecessor.getId(), this.getPeerInfo().getId(), key)) {
-			return this.peerI;
+			return this.peer;
 		}
 		if (Loggs.inTheMiddle(this.getPeerInfo().getId(), this.getFingerTable().get(0).getId(), key)) {
 			return this.getFingerTable().get(0);
@@ -208,10 +208,10 @@ public class ManageChord implements Runnable {
 			port = this.getFingerTable().get(getM() - 1).getPort();
 		}
 
-		String lookupMessage = CreateMsg.getLookup(this.peerI.getId(), key);
+		String lookupMessage = CreateMsg.getLookup(this.peer.getId(), key);
 		String response = Client.sendMsg(addr, port, lookupMessage, true);
 
-		PeerI owner = new PeerI(response);
+		Peer owner = new Peer(response);
 
 		while (response.startsWith("Ask")) {
 			response = Client.sendMsg(owner.getAddress(), owner.getPort(), lookupMessage, true);
@@ -221,18 +221,18 @@ public class ManageChord implements Runnable {
 				return null;
 			}
 			response = response.trim();
-			owner = new PeerI(response);
+			owner = new Peer(response);
 		}
 
 		return owner;
 	}
 
-	public List<PeerI> getNextPeers() {
-		List<PeerI> nextPeersArray = new ArrayList<PeerI>();
+	public List<Peer> getNextPeers() {
+		List<Peer> nextPeersArray = new ArrayList<Peer>();
 		int i = 0;
-		Iterator<PeerI> it = nextPeers.iterator();
+		Iterator<Peer> it = nextPeers.iterator();
 		while(it.hasNext() && i++ < NEXT_PEERS_MAX_SIZE-1) {
-			PeerI nextPeer = it.next();
+			Peer nextPeer = it.next();
 			nextPeersArray.add(nextPeer);
 		}
 		return nextPeersArray;
@@ -242,15 +242,15 @@ public class ManageChord implements Runnable {
 		nextPeers.pop();
 		this.getFingerTable().set(0,nextPeers.peekFirst());
 		try {
-			String keyToLookup = FingerTableFixer.getKey(this.getPeerInfo().getId(), 0);
+			String keyToLookup = FingerTable.getKey(this.getPeerInfo().getId(), 0);
 			String lookupMessage = CreateMsg.getLookup(this.getPeerInfo().getId(), keyToLookup);
 			String response = this.lookup(keyToLookup);
 			response = response.trim();
-			PeerI info = new PeerI(response);
+			Peer info = new Peer(response);
 			while(response.startsWith(MsgType.ASK.getType())) {
 				response = Client.sendMsg(info.getAddress(), info.getPort(), lookupMessage, true);
 				if (response == null) return;
-				info = new PeerI(response);
+				info = new Peer(response);
 			}
 			this.getFingerTable().set(0, info);
 		} catch (Exception e) {
@@ -258,7 +258,7 @@ public class ManageChord implements Runnable {
 		}
 	}
 
-	public PeerI getNextPeer() {
+	public Peer getNextPeer() {
 		return nextPeers.peek();
 	}
 
@@ -266,7 +266,7 @@ public class ManageChord implements Runnable {
 		return M;
 	}
 
-	public PeerI getSuccessor(int index) {
+	public Peer getSuccessor(int index) {
 		return this.fingerTable.get(index);
 	}
 
@@ -278,19 +278,19 @@ public class ManageChord implements Runnable {
 		this.predecessor = nullPeerInfo;
 	}
 
-	public PeerI getPeerInfo() {
-		return peerI;
+	public Peer getPeerInfo() {
+		return peer;
 	}
 
-	public void setPeerInfo(PeerI peerI) {
-		this.peerI = peerI;
+	public void setPeerInfo(Peer peer) {
+		this.peer = peer;
 	}
 
-	public ArrayList<PeerI> getFingerTable() {
+	public ArrayList<Peer> getFingerTable() {
 		return fingerTable;
 	}
 
- void setFingerTable(ArrayList<PeerI> fingerTable) {
+ void setFingerTable(ArrayList<Peer> fingerTable) {
 		this.fingerTable = fingerTable;
 	}
 
@@ -302,8 +302,8 @@ public class ManageChord implements Runnable {
 		this.database = database;
 	}
 
-	public void updateNextPeers(Deque<PeerI> peersReceived) {
-		PeerI nextPeer = nextPeers.pop();
+	public void updateNextPeers(Deque<Peer> peersReceived) {
+		Peer nextPeer = nextPeers.pop();
 		nextPeers.clear();
 		nextPeers = peersReceived;
 		nextPeers.push(nextPeer);
@@ -311,10 +311,10 @@ public class ManageChord implements Runnable {
 
 	public void stabilize(AbstractPeer x) {
 		if (x.isNull()) return;
-		PeerI successor = getNextPeer();
-		PeerI potentialSuccessor = (PeerI) x;
+		Peer successor = getNextPeer();
+		Peer potentialSuccessor = (Peer) x;
 
-		if (Loggs.inTheMiddle(this.peerI.getId(),
+		if (Loggs.inTheMiddle(this.peer.getId(),
 				successor.getId(),
 				potentialSuccessor.getId())) {
 			setNextPeer(potentialSuccessor);

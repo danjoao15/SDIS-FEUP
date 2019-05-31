@@ -1,7 +1,7 @@
 package protocols;
 
 import chordSetup.ManageChord;
-import chordSetup.PeerI;
+import chordSetup.Peer;
 import main.Client;
 import main.CreateMsg;
 import util.Loggs;
@@ -20,11 +20,11 @@ public class SendIDelete implements Runnable{
 	
 	@Override
 	public void run() {
-		PeerI successor = chordMngr.getChunkOwner(IDfile);
+		Peer successor = chordMngr.getChunkOwner(IDfile);
 		String message = CreateMsg.getIDelete(IDsender, IDfile);
-		Loggs.LOG.info("Sending Delete request for file: " + IDfile);
+		Loggs.LOG.info("delete request for file " + IDfile);
 		Client.sendMsg(successor.getAddress(), successor.getPort(), message, false);
-		System.out.println("Sent request to delete file: " + IDfile);
+		System.out.println("delete request for file " + IDfile);
 	}
 	
 	
