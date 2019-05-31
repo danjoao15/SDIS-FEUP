@@ -139,14 +139,6 @@ public class PeerMain {
 				e.printStackTrace();
 			}
 		}
-		Path pathFileReclaim = Paths.get(getPath().toString() + "/reclaim/");
-		if(!Files.exists(pathFileReclaim)) {
-			try {
-				Files.createDirectory(pathFile);
-			} catch (IOException e) {
-				e.printStackTrace();
-			}
-		}
 	}
 	public static boolean capacityExceeded(int amount) {
 		if(usedStorage + amount > storageCapacity) {
